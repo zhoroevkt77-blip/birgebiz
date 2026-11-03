@@ -127,7 +127,7 @@ class AdIn(BaseModel):
     cat: str
     sub: str = Field(min_length=1, max_length=80)
     title: str = Field(min_length=5, max_length=80)
-    body: str = Field(min_length=10, max_length=1500)
+    text: str = Field(min_length=10, max_length=1500)
     price: int | None = Field(default=None, ge=0, le=100_000_000)
     cur: str = "RUB"
     per: str = Field(default="", max_length=30)
@@ -273,7 +273,7 @@ async def create_ad(ad: AdIn, request: Request,
             """INSERT INTO ads (id, owner_hash, ip_hash, cat, sub, title, body, price, cur, per,
                                 city, area, name, phone, wa, tg, for_kg)
                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
-            (ad_id, owner_hash, ip_hash, ad.cat, ad.sub, ad.title, ad.body, ad.price, ad.cur,
+            (ad_id, owner_hash, ip_hash, ad.cat, ad.sub, ad.title, ad.text, ad.price, ad.cur,
              ad.per, ad.city, ad.area, ad.name, ad.phone, ad.wa, ad.tg, ad.forKg))
         row = await cur.fetchone()
     return to_json(row, owner_hash, False)
@@ -331,7 +331,7 @@ async def validation_err(_req, exc):
     try:
         first = exc.errors()[0]
         field = first.get("loc", ["", ""])[-1]
-        names = {"title": "Аталышы (5–80 тамга)", "body": "Толук маалымат (10–1500 тамга)",
+        names = {"title": "Аталышы (5–80 тамга)", "text": "Толук маалымат (10–1500 тамга)",
                  "price": "Баасы", "city": "Шаар", "cat": "Категория", "sub": "Түрү"}
         if field in names:
             msg = f"{names[field]} туура эмес толтурулган."
