@@ -85,14 +85,29 @@ def is_admin(token: str | None) -> bool:
 async def lifespan(_app: FastAPI):
     global pool
     if not DATABASE_URL:
-        raise RuntimeError("DATABASE_URL коюлган эмес")
-    pool = AsyncConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=False,
-                               kwargs={"row_factory": dict_row})
-    await pool.open()
-    async with pool.connection() as conn:
-        await conn.execute(SCHEMA)
+        print("ЭСКЕРТҮҮ: DATABASE_URL коюлган эмес — сайт ачылат, бирок жарыялар иштебейт.", flush=True)
+    else:
+        try:
+            pool = AsyncConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=False,
+                                       kwargs={"row_factory": dict_row})
+            await pool.open(wait=True, timeout=15)
+            async with db().connection() as conn:
+                await conn.execute(SCHEMA)
+            print("База туташты, таблицалар даяр.", flush=True)
+        except Exception as e:  # база жок болсо да сайт ачылсын
+            print(f"ЭСКЕРТҮҮ: базага туташкан жок: {e}", flush=True)
+            if pool:
+                await pool.close()
+            pool = None
     yield
-    await pool.close()
+    if pool:
+        await pool.close()
+
+
+def db():
+    if pool is None:
+        raise HTTPException(503, "База туташкан жок. Railway'де DATABASE_URL өзгөрмөсүн текшериңиз.")
+    return pool
 
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
@@ -149,7 +164,7 @@ def to_json(row: dict, owner_hash: str | None, admin: bool) -> dict:
 
 @app.get("/healthz")
 async def healthz():
-    return {"ok": True}
+    return {"ok": True, "db": pool is not None}
 
 
 @app.get("/api/ads")
@@ -157,7 +172,7 @@ async def list_ads(x_owner_token: str | None = Header(default=None),
                    x_admin_token: str | None = Header(default=None)):
     admin = is_admin(x_admin_token)
     owner_hash = h(x_owner_token) if x_owner_token else None
-    async with pool.connection() as conn:
+    async with db().connection() as conn:
         cur = await conn.execute(
             f"""SELECT * FROM ads
                 WHERE created_at > now() - interval '{AD_LIFETIME_DAYS} days'
@@ -178,7 +193,7 @@ async def create_ad(ad: AdIn, request: Request,
         raise HTTPException(422, "Жок дегенде бир байланыш жазыңыз: телефон, WhatsApp же Telegram.")
     owner_hash = h(x_owner_token)
     ip_hash = h(client_ip(request))
-    async with pool.connection() as conn:
+    async with db().connection() as conn:
         cur = await conn.execute(
             "SELECT count(*) AS n FROM ads WHERE ip_hash=%s AND created_at > now() - interval '1 hour'",
             (ip_hash,))
@@ -204,7 +219,7 @@ async def create_ad(ad: AdIn, request: Request,
 async def delete_ad(ad_id: str,
                     x_owner_token: str | None = Header(default=None),
                     x_admin_token: str | None = Header(default=None)):
-    async with pool.connection() as conn:
+    async with db().connection() as conn:
         if is_admin(x_admin_token):
             cur = await conn.execute("DELETE FROM ads WHERE id=%s", (ad_id,))
         elif x_owner_token:
@@ -220,7 +235,7 @@ async def delete_ad(ad_id: str,
 @app.post("/api/ads/{ad_id}/report")
 async def report_ad(ad_id: str, request: Request):
     ip_hash = h(client_ip(request))
-    async with pool.connection() as conn:
+    async with db().connection() as conn:
         cur = await conn.execute(
             "INSERT INTO reports (ad_id, ip_hash) SELECT %s, %s WHERE EXISTS (SELECT 1 FROM ads WHERE id=%s) "
             "ON CONFLICT DO NOTHING", (ad_id, ip_hash, ad_id))
@@ -235,7 +250,7 @@ async def report_ad(ad_id: str, request: Request):
 async def unhide_ad(ad_id: str, x_admin_token: str | None = Header(default=None)):
     if not is_admin(x_admin_token):
         raise HTTPException(403, "Админ гана.")
-    async with pool.connection() as conn:
+    async with db().connection() as conn:
         await conn.execute("UPDATE ads SET hidden=false, reports=0 WHERE id=%s", (ad_id,))
         await conn.execute("DELETE FROM reports WHERE ad_id=%s", (ad_id,))
     return {"ok": True}
