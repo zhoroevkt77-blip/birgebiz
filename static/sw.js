@@ -1,5 +1,5 @@
-// БИРГЕБИЗ service worker: барак офлайн ачылат, жарыялар дайыма серверден алынат.
-const CACHE = "birgebiz-v1";
+// БИЗ БИРГЕБИЗ! service worker: барак офлайн ачылат, жарыялар дайыма серверден алынат.
+const CACHE = "birgebiz-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/static/icon.svg", "/static/icon-192.png"];
 
 self.addEventListener("install", (e) => {
