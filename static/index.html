@@ -115,7 +115,10 @@ h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(
 label.f{display:block;font-size:14px;font-weight:800;color:var(--fg);letter-spacing:-.2px}
 label.f>input,label.f>select,label.f>textarea{display:block;margin-top:6px}
 label.f span.req{color:var(--red)}
-.f input,.f select,.f textarea{font-size:16px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;font-weight:400;color:var(--fg);width:100%;min-width:0}
+.f input,.f select,.f textarea{font-size:16px;border:2px solid var(--fg);background:var(--surface);border-radius:12px;padding:12px 14px;font-weight:500;color:var(--fg);width:100%;min-width:0}
+.f input::placeholder,.f textarea::placeholder{color:#8a7d76;font-weight:400}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent)}
+.areaf select{border:2px solid var(--fg)}
 .f textarea{min-height:96px;resize:vertical}
 .check{display:flex;gap:10px;align-items:center;font-size:14px}
 .check input{width:20px;height:20px;accent-color:var(--red)}
