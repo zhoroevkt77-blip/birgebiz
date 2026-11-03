@@ -133,13 +133,16 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;background:var(--surface);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
 .tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:-.2px;min-width:0}
 .tab span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.tab .ti{font-size:24px;line-height:1.1;filter:grayscale(.15)}
+.tab .ti{width:26px;height:26px;color:var(--red)}
+.tab .ti svg{width:26px;height:26px;display:block}
+.tab[aria-current="page"] .ti svg{stroke-width:2.6}
 .tab[aria-current="page"]{color:var(--fg);font-weight:800}
 .tab-post{color:var(--fg);font-weight:800}
 .tab-post .plus{width:58px;height:58px;margin-top:-30px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;border:4px solid var(--sun);box-sizing:border-box}
 .tab-post:active .plus{transform:scale(.95)}
 .mrow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;font-weight:800;font-size:16px;letter-spacing:-.3px;color:var(--fg)}
-.mrow .mi{width:44px;height:44px;flex:none;border-radius:12px;background:var(--sun);display:grid;place-items:center;font-size:22px}
+.mrow .mi{width:44px;height:44px;flex:none;border-radius:12px;background:var(--red);color:var(--sun);display:grid;place-items:center}
+.mrow .mi svg{width:24px;height:24px}
 .mrow small{display:block;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:0}
 .mrow .chev{margin-left:auto;color:var(--muted);font-weight:400}
 .mlist{display:grid;gap:10px}
@@ -203,11 +206,11 @@ footer p{margin:0 0 8px;max-width:70ch}
 </footer>
 
 <nav class="tabbar" aria-label="Негизги меню">
-  <button class="tab" data-tab="home" aria-current="page"><span class="ti" aria-hidden="true">🏠</span><span>Башкы бет</span></button>
-  <button class="tab" data-tab="fav"><span class="ti" aria-hidden="true">❤️</span><span>Тандалган</span></button>
+  <button class="tab" data-tab="home" aria-current="page"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></span><span>Башкы бет</span></button>
+  <button class="tab" data-tab="fav"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></span><span>Тандалган</span></button>
   <button class="tab tab-post" data-tab="post"><span class="plus" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span>Жарыя берүү</span></button>
-  <button class="tab" data-tab="help"><span class="ti" aria-hidden="true">❓</span><span>Жардам</span></button>
-  <button class="tab" data-tab="me"><span class="ti" aria-hidden="true">👤</span><span>Кабинет</span></button>
+  <button class="tab" data-tab="help"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg></span><span>Жардам</span></button>
+  <button class="tab" data-tab="me"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span><span>Кабинет</span></button>
 </nav>
 
 <div id="layer"></div>
@@ -474,14 +477,15 @@ function openHelp(){
   setTab("help");
   openSheet('<div class="shead"><h3>Жардам</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="faq">'+q.map(x=>'<details><summary>'+esc(x[0])+'</summary><p>'+esc(x[1])+'</p></details>').join("")+'</div>');
 }
+const MI={list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3H9z"/><path d="M7 4.5H5V21h14V4.5h-2"/><path d="M9 11h6M9 15h6M9 19h3"/></svg>',mega:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6l-7 4z"/><path d="M17.5 9a4 4 0 0 1 0 6"/><path d="M7 14l1.5 5h2.5l-1-4.5"/></svg>',heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg>',help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>'};
 function openMe(){
   const mine=S.ads.filter(a=>a.mine).length, fav=S.ads.filter(a=>isFav(a.id)).length;
   setTab("me");
   openSheet('<div class="shead"><h3>Кабинет</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="mlist">'
-   +'<button class="mrow" data-go="mine"><span class="mi">📋</span><span>Менин жарыяларым<small>'+mine+' жарыя</small></span><span class="chev">›</span></button>'
-   +'<button class="mrow" data-go="post"><span class="mi">📢</span><span>Жарыя берүү<small>Бекер, аккаунтсуз</small></span><span class="chev">›</span></button>'
-   +'<button class="mrow" data-go="fav"><span class="mi">❤️</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
-   +'<button class="mrow" data-go="help"><span class="mi">❓</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="mine"><span class="mi">'+MI.list+'</span><span>Менин жарыяларым<small>'+mine+' жарыя</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="post"><span class="mi">'+MI.mega+'</span><span>Жарыя берүү<small>Бекер, аккаунтсуз</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="fav"><span class="mi">'+MI.heart+'</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="help"><span class="mi">'+MI.help+'</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
    +(S.admin?'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'
    +'</div>');
