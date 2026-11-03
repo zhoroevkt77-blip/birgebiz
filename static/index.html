@@ -308,7 +308,7 @@ function renderFeed(){
   if(S.ready)$("status").textContent=list.length+" табылды";
   if(!list.length){
     let msg;
-    if(S.offline) msg='<b>Серверге туташкан жок</b>Интернетти текшерип, баракты жаңыртыңыз.';
+    if(S.offline) msg='<b>Жарыялар азыр жүктөлбөй жатат</b>'+esc(S.err||"Интернетти текшерип, баракты жаңыртыңыз.");
     else if(!S.ready) msg='<b>Жарыялар жүктөлүүдө…</b>Бир аз күтө туруңуз.';
     else if(S.mine) msg='<b>Сизде азырынча жарыя жок</b>Биринчи жарыяңызды бериңиз — бекер.';
     else if(!S.ads.length) msg='<b>Биринчи жарыяны сиз бериңиз</b>Жумуш, койка-место, посылка же кызмат — мекендештер ушул жерден издейт.';
@@ -430,7 +430,7 @@ render();
 
 async function load(){
   try{const j=await api("/api/ads");S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=!!j.admin;S.offline=false}
-  catch(x){S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
+  catch(x){S.err=x&&x.message;S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
   S.ready=true;render();
 }
 load();
