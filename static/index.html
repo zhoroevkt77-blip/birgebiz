@@ -40,8 +40,17 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .logo svg{flex:none}
 .logo .ex{color:var(--sun)}
 @media (max-width:420px){.logo{font-size:21px;gap:8px}}
-.search{flex:1 1 260px;min-width:0;display:flex;background:var(--surface);border-radius:999px;overflow:hidden}
-.search input{flex:1;min-width:0;border:0;background:transparent;padding:10px 16px;color:var(--fg)}
+.search{flex:1 1 260px;min-width:0;display:flex;align-items:center;background:var(--surface);border-radius:999px;overflow:hidden;padding:5px 5px 5px 14px;gap:8px}
+.search .sico{flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:transparent;padding:8px 0;color:var(--fg);font-size:16px}
+.search input::placeholder{color:#8a7d76}
+.sgo{flex:none;border:0;border-radius:999px;background:var(--sun);color:#000;font-weight:900;font-size:16px;padding:10px 20px;letter-spacing:-.2px}
+.shint{flex-basis:100%;margin:0;color:#fff;font-size:14px;line-height:1.35}
+.shint b{color:var(--sun);font-weight:900}
+.smartbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px;padding:10px 12px;background:var(--surface);border:2px solid var(--fg);border-radius:14px}
+.sb-l{font-weight:900;letter-spacing:-.2px}
+.sb-c{background:var(--sun);color:#000;font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px}
+.sb-x{margin-left:auto;border:0;background:none;font-weight:800;color:var(--red);padding:4px 2px}
 .search input:focus{outline:none}
 .search:focus-within{outline:3px solid var(--sun)}
 .btn{border:0;border-radius:999px;padding:11px 18px;font-weight:800;letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
@@ -176,12 +185,16 @@ footer p{margin:0 0 8px;max-width:70ch}
       <span>БИЗ БИРГЕБИЗ<span class="ex">!</span></span>
     </button>
     <form class="search" id="sform" role="search">
-      <input id="q" type="search" placeholder="Издөө: койка-место, патент, посылка…" aria-label="Издөө">
+      <svg class="sico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Койка-место Люблино 8 миң" aria-label="Акылдуу издөө">
+      <button class="sgo" type="submit">Изде</button>
     </form>
+    <p class="shint"><b>✨ Акылдуу издөө:</b> Эмне керек, кайсы шаарда, канчага? Ушуну жазсаңыз жетет.</p>
   </div>
 </header>
 
 <main class="wrap">
+  <div class="smartbar" id="smartBar" hidden></div>
   <nav class="cities" id="cities" aria-label="Шаарлар"></nav>
   <label class="f areaf" id="areaWrap" hidden>Район / метро
     <select id="areaSel"></select>
@@ -306,7 +319,7 @@ const fmt=n=>new Intl.NumberFormat("ru-RU").format(n);
 function ago(t){const m=Math.floor((Date.now()-t)/6e4);if(m<1)return"жаңы эле";if(m<60)return m+" мүн. мурун";const h=Math.floor(m/60);if(h<24)return h+" саат мурун";const d=Math.floor(h/24);return d<30?d+" күн мурун":new Date(t).toLocaleDateString("ru-RU")}
 function priceHtml(a){if(a.price==null||a.price==="")return'<span class="price">Келишим</span>';return'<span class="price">'+fmt(a.price)+" "+(a.cur==="KGS"?"сом":"₽")+(a.per?' <small>'+esc(a.per)+'</small>':'')+'</span>'}
 
-const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,fav:false,favs:[],ready:false,offline:false,admin:false,token:"",adminTok:""};
+const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,fav:false,max:null,forKg:false,smart:null,favs:[],ready:false,offline:false,admin:false,token:"",adminTok:""};
 function rnd(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
 try{S.token=localStorage.getItem("bb_token")||"";if(!S.token){S.token=rnd();localStorage.setItem("bb_token",S.token)}}catch(e){S.token=S.token||rnd()}
 try{const u=new URL(location.href),a=u.searchParams.get("admin");if(a!==null){a?localStorage.setItem("bb_admin",a):localStorage.removeItem("bb_admin");u.searchParams.delete("admin");history.replaceState(null,"",u.pathname+u.search+u.hash)}S.adminTok=localStorage.getItem("bb_admin")||""}catch(e){}
@@ -326,8 +339,10 @@ function renderCities(){
   if(ar)$("areaSel").innerHTML='<option value="">Бардык райондор</option>'+ar.map(x=>'<option'+(x===S.area?' selected':'')+'>'+esc(x)+'</option>').join("");
 }
 function filtered(){
-  const q=S.q.trim().toLowerCase();
-  return S.ads.filter(a=>(!S.mine||a.mine)&&(!S.fav||isFav(a.id))&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||a.sub===S.sub)&&(!q||[a.title,a.text,a.sub,a.area,a.city].join(" ").toLowerCase().includes(q))).sort((x,y)=>y.created-x.created);
+  const q=S.q.trim().toLowerCase().replace(/ё/g,"е");
+  const toks=q.split(/\s+/).filter(Boolean);
+  const hit=a=>{if(!toks.length)return true;const h=[a.title,a.text,a.sub,a.area,a.city,a.name].join(" ").toLowerCase().replace(/ё/g,"е");return toks.every(w=>h.includes(w.length>5?w.slice(0,w.length-2):w))};
+  return S.ads.filter(a=>(!S.max||a.price==null||a.price<=S.max)&&(!S.forKg||a.forKg)&&hit(a)&&(!S.mine||a.mine)&&(!S.fav||isFav(a.id))&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||a.sub===S.sub)&&true).sort((x,y)=>y.created-x.created);
 }
 function renderCats(){
   const base=S.ads.filter(a=>!S.city||a.city===S.city);
@@ -451,6 +466,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.sub!==undefined){S.sub=t.dataset.sub||null;render();return}
   if(t.dataset.ad){openDetail(t.dataset.ad);return}
   if(t.dataset.fav){const id=t.dataset.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[id].concat(S.favs);saveFavs();const on=isFav(id);t.setAttribute("aria-pressed",on);t.textContent=on?"❤️ Тандалганда":"🤍 Тандалганга кошуу";toast(on?"Тандалганга кошулду":"Тандалгандан алынды");renderFeed();return}
+  if(t.dataset.smartclear!==undefined){$("q").value="";runSmart("");return}
   if(t.dataset.tab){goTab(t.dataset.tab);return}
   if(t.dataset.go){closeSheet();goTab(t.dataset.go);return}
   if(t.dataset.del){delAd(t.dataset.del);return}
@@ -461,11 +477,73 @@ document.addEventListener("click",e=>{
     try{navigator.clipboard.writeText(txt).then(()=>toast("Көчүрүлдү"),()=>sel(el))}catch(x){sel(el)}return}
 });
 function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Белгиленди — көчүрүп алыңыз")}
+/* ===== Акылдуу издөө: «эмне · кайда · канчага» деген сүйлөмдү фильтрлерге которот ===== */
+const CITY_STEMS=[["подмоск","Подмосковье"],["москв","Москва"],["мск","Москва"],["масква","Москва"],["питер","Санкт-Петербург"],["спб","Санкт-Петербург"],["санкт","Санкт-Петербург"],["ленобл","Санкт-Петербург"],["екатер","Екатеринбург"],["екб","Екатеринбург"],["новосиб","Новосибирск"],["якут","Якутск"],["красноя","Красноярск"],["иркут","Иркутск"],["сургут","Сургут"],["нижневарт","Нижневартовск"],["ханты","Ханты-Мансийск"],["тюмен","Тюмень"],["уренго","Новый Уренгой"],["ноябрьск","Ноябрьск"],["мурманск","Мурманск"],["казан","Казань"],["самар","Самара"],["нижн","Нижний Новгород"],["уфа","Уфа"],["уфе","Уфа"],["уфад","Уфа"],["перм","Пермь"],["челяб","Челябинск"],["томск","Томск"],["омск","Омск"],["калуг","Калуга"],["тула","Тула"],["туле","Тула"],["тулад","Тула"],["владимир","Владимир"],["воронеж","Воронеж"],["краснодар","Краснодар"],["ростов","Ростов-на-Дону"],["владивост","Владивосток"],["хабар","Хабаровск"]];
+const KW=[
+ [["койка","койко","местечк"],"house","Койка-место"],[["бөлмө","болмо","комнат"],"house","Бөлмө"],[["батир","квартир","суткал","посуточ"],"house","Батир"],[["конок","гостиниц","хостел"],"house","Конок үй"],[["ижара","аренд","турак"],"house",null],
+ [["склад","сортиров","грузчик"],"job","Склад / сортировка"],[["курьер"],"job","Курьер"],[["курулуш","стройк","строител","разнорабоч"],"job","Курулуш"],[["клининг","уборщ","уборк","тазала"],"job","Клининг"],[["таксист","айдоочу","водител"],"job","Такси / айдоочу"],[["повар","официант","посудомой","ашпоз"],"job","Кафе / тамак-аш"],[["жумуш","работ","ваканс"],"job",null],
+ [["патент"],"law","Патент"],[["регистрац","каттоо","прописк"],"law","Регистрация"],[["рвп","внж"],"law","РВП / ВНЖ"],[["жарандык","гражданств"],"law","Жарандык"],[["депорт","запрет","тыюу","выдворен"],"law","Депорт / тыюу маселеси"],[["юрист","адвокат","консультац"],"law",null],
+ [["кредит","заем","займ","карыз"],"fin","Микрокредит / заем"],[["перевод","которуу","акча котор"],"fin","Акча которуу"],
+ [["посылка","посылк"],"cargo","Посылка"],[["контейнер"],"cargo","Контейнер"],[["жүк","жук","груз"],"cargo","Жүк ташуу"],
+ [["автобус"],"ride","Автобус"],[["межгород","шаар аралык"],"ride","Шаар аралык такси"],
+ [["авиа","самолет","учак","авиабилет"],"ticket","Авиабилет"],[["поезд","поюз"],"ticket","Поезд"],[["билет"],"ticket",null],
+ [["стомат","тиш","зуб"],"med","Стоматология"],[["гинек"],"med","Гинекология"],[["узи","анализ"],"med","УЗИ / анализ"],[["дарыгер","врач","доктор","клиник"],"med",null],
+ [["маникюр","косметолог","ресниц","бров"],"beauty","Маникюр / косметолог"],[["барбер","эркек мастер","мужск"],"beauty","Эркек мастер"],[["чач","парикмах","стрижк"],"beauty",null],
+ [["халал","эт ","мясо"],"food","Халал эт"],[["курут","чучук","казы","бал ","мекен азык"],"food","Мекен азыктары"],[["той","ресторан","банкет"],"food","Кафе / той-аш"],[["кафе","тамак"],"food",null],
+ [["экзамен","тестирован"],"edu","Патентке экзамен (тил, тарых, мыйзам)"],[["орус тил","русск"],"edu","Орус тили"],[["англис","английск"],"edu","Англис тили"],[["курс","үйрөн","окуу","обучен"],"edu",null],
+ [["права"],"auto","Права алмаштыруу / консультация"],[["запчаст","тетик"],"auto","Автотетиктер"],[["шиномонтаж","мойк","автожуу"],"auto","Шиномонтаж / автожуучу"],[["автосервис","сто ","ремонт авто","машина оңдо"],"auto","Машина оңдоо"],
+ [["жоголгон","пропал","потерял"],"help","Жоголгон адам / документ"],[["фонд","кайрымд","жардам","помощ"],"help",null],
+ [["айфон","iphone","samsung","самсунг","телефон"],"market","Телефон / техника"],[["эмерек","мебел","диван","шкаф"],"market","Эмерек"],[["холодильник","стиральн","кир жуу"],"market","Тиричилик техникасы"],[["бекер","даром","бесплатн"],"market","Бекер берем"],[["барахол","сатам","продам","продаю"],"market",null]
+];
+function smartParse(raw){
+  let t=" "+raw.toLowerCase().replace(/ё/g,"е").replace(/[,.;!?()«»"]/g," ").replace(/\s+/g," ")+" ";
+  const out={cat:null,sub:null,city:null,area:null,max:null,forKg:false,words:[]};
+  const cut=m=>{t=t.replace(m," ")};
+  // баасы: «40 миң», «8к», «8000ге чейин», «до 15000», «5000 руб»
+  let m=t.match(/(?:до\s*)?(\d[\d\s]{0,8}?)\s*(миң|мин|тыс|к|k)(?=\s|[а-яөүң])/);
+  if(m){out.max=parseInt(m[1].replace(/\s/g,""),10)*1000;cut(m[0])}
+  else if((m=t.match(/(?:до\s*)?(\d{3,7})\s*(?:₽|руб\S*|р|сом\S*|ге|га|го|гө|ке|ка|ко|кө)?(?:\s*чейин)?(?=\s)/))){out.max=parseInt(m[1],10);cut(m[0])}
+  if(/кыргыз|мекендеш|землям|своим/.test(t)){out.forKg=true;t=t.replace(/\S*(кыргыз|мекендеш|землям|своим)\S*/g," ")}
+  // район (шаардан мурун, анткени Люберцы → Подмосковье)
+  outer:for(const [city,list] of Object.entries(AREAS)){for(const ar of list){
+    const nm=ar.replace(/^м\.\s*/,"").replace(/^Ленобласть:\s*/,"").toLowerCase().replace(/ё/g,"е");
+    const stem=nm.split(/[ (]/)[0];if(stem.length<4)continue;
+    const st=stem.slice(0,Math.max(4,stem.length-2));
+    const rx=new RegExp("\\s"+st.replace(/[-]/g,"\\-")+"\\S*","");
+    const mm=t.match(rx);if(mm){out.area=ar;out.city=city;cut(mm[0]);break outer}}}
+  if(!out.city){for(const [st,c] of CITY_STEMS){const rx=new RegExp("\\s"+st+"\\S*");const mm=t.match(rx);if(mm){out.city=c;cut(mm[0]);break}}}
+  for(const [keys,cat,sub] of KW){for(const k of keys){
+    const rx=new RegExp((k.includes(" ")?"":"\\s")+k.trim()+"\\S*");const mm=t.match(rx);
+    if(mm){if(!out.cat){out.cat=cat;out.sub=sub}else if(out.cat===cat&&!out.sub&&sub)out.sub=sub;cut(mm[0])}}}
+  const stop=new Set(["керек","издейм","изде","бар","жок","үчүн","учун","для","нужен","нужна","нужно","ищу","в","на","и","менен","жана","арзан","дешево","срочно","тез","ге","га","дан","ден","тан","тен"]);
+  out.words=t.split(" ").filter(w=>w.length>=3&&!stop.has(w)&&!/^\d+$/.test(w));
+  if(out.cat||out.city)out.words=[]; // категория же шаар табылса, калган сөздөр фильтр болбойт
+  return out;
+}
+function smartSummary(p){const a=[];
+  if(p.cat)a.push(CAT[p.cat].nm+(p.sub?" · "+p.sub:""));
+  if(p.city)a.push(p.city+(p.area?", "+p.area:""));
+  if(p.max)a.push("≤ "+fmt(p.max));
+  if(p.forKg)a.push("Мекендештерге");
+  if(p.words.length)a.push("«"+p.words.join(" ")+"»");
+  return a}
+function runSmart(raw){
+  const p=smartParse(raw);
+  S.cat=p.cat;S.sub=p.sub;S.city=p.city;S.area=p.area;S.max=p.max;S.forKg=p.forKg;S.q=p.words.join(" ");S.mine=false;S.fav=false;S.smart=raw.trim()?p:null;
+  setTab("home");render();renderSmart();if(raw.trim())toFeed();
+}
+function renderSmart(){
+  const el=$("smartBar");if(!S.smart){el.hidden=true;return}
+  const parts=smartSummary(S.smart);
+  el.hidden=false;
+  el.innerHTML='<span class="sb-l">✨ Түшүндүм:</span>'+(parts.length?parts.map(x=>'<span class="sb-c">'+esc(x)+'</span>').join(""):'<span class="sb-c">баары</span>')+'<button class="sb-x" data-smartclear>✕ Тазалоо</button>';
+}
+
 function setTab(name){document.querySelectorAll(".tab[data-tab]").forEach(b=>{if(b.dataset.tab===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")})}
 function toFeed(){const f=$("feedTitle");if(f)f.scrollIntoView({behavior:"smooth",block:"start"})}
 function goTab(name){
   if(name==="post"){openPost();return}
-  if(name==="home"){closeSheet();S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";$("q").value="";setTab("home");render();scrollTo({top:0,behavior:"smooth"});return}
+  if(name==="home"){closeSheet();S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";S.max=null;S.forKg=false;S.smart=null;$("q").value="";renderSmart();setTab("home");render();scrollTo({top:0,behavior:"smooth"});return}
   if(name==="fav"){closeSheet();S.fav=true;S.mine=false;S.cat=S.sub=null;setTab("fav");render();toFeed();return}
   if(name==="mine"){S.mine=true;S.fav=false;S.cat=S.sub=null;setTab("me");render();toFeed();return}
   if(name==="help"){openHelp();return}
@@ -495,8 +573,10 @@ function openMe(){
    +'</div>');
 }
 $("home").onclick=()=>goTab("home");
-$("sform").addEventListener("submit",e=>e.preventDefault());
-$("q").addEventListener("input",e=>{S.q=e.target.value;renderFeed()});
+$("sform").addEventListener("submit",e=>{e.preventDefault();$("q").blur();runSmart($("q").value)});
+$("q").addEventListener("input",e=>{if(!e.target.value.trim()&&S.smart)runSmart("")});
+const EX=["Койка-место Люблино 8 миң","Патент Москва","Посылка Бишкекке","Склад жумуш күнүнө","Стоматолог Казань","Суткалык батир Питер","Айфон 30 миң Екб"];
+let exi=0;setInterval(()=>{const q=$("q");if(document.activeElement!==q&&!q.value){exi=(exi+1)%EX.length;q.placeholder=EX[exi]}},3000);
 $("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderFeed()});
 
 render();
