@@ -505,7 +505,12 @@ async function load(){
 load();
 setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+if("serviceWorker" in navigator){
+  let reloaded=false;const hadCtl=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(hadCtl&&!reloaded){reloaded=true;location.reload()}});
+  window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
+}
+window.addEventListener("pageshow",e=>{if(e.persisted)location.reload()});
 })();
 </script>
 </body>
