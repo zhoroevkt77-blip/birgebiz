@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ky">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>БИРГЕБИЗ</title>
+<meta name="description" content="Россиядагы кыргыз мекендештер жана мигранттар үчүн бекер жарыя тактасы: жумуш, койка-место, патент, посылка, билет.">
+<meta name="theme-color" content="#c8102e">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: sticky red header band → city strip → category grid → live feed; post/detail open in a bottom sheet */
+:root{
+  --bg:#f6f3ef; --surface:#ffffff; --sunk:#ece6df; --fg:#1d1715; --muted:#6c605a; --line:#ded5cc;
+  --red:#c8102e; --red-ink:#ffffff; --sun:#f5b301; --sun-ink:#3a2a00; --good:#1f7a4c; --warn:#a15c00;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151110; --surface:#1f1917; --sunk:#2a2220; --fg:#f3ece7; --muted:#a8998f; --line:#3a302c;
+  --red:#e0384f; --red-ink:#ffffff; --sun:#f7c23c; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151110; --surface:#1f1917; --sunk:#2a2220; --fg:#f3ece7; --muted:#a8998f; --line:#3a302c;
+  --red:#e0384f; --red-ink:#ffffff; --sun:#f7c23c; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--red)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--red);color:var(--red-ink)}
+.hrow{display:flex;align-items:center;gap:12px;padding-block:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.02em;background:none;border:0;color:inherit;padding:0}
+.logo svg{flex:none}
+.search{flex:1 1 260px;min-width:0;display:flex;background:var(--surface);border-radius:999px;overflow:hidden}
+.search input{flex:1;min-width:0;border:0;background:transparent;padding:10px 16px;color:var(--fg)}
+.search input:focus{outline:none}
+.search:focus-within{outline:3px solid var(--sun)}
+.btn{border:0;border-radius:999px;padding:10px 18px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn-sun{background:var(--sun);color:var(--sun-ink)}
+.btn-red{background:var(--red);color:var(--red-ink)}
+.btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--fg)}
+.btn-ghost-inv{background:transparent;border:1.5px solid rgba(255,255,255,.5);color:var(--red-ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* city strip */
+.cities{display:flex;gap:8px;overflow-x:auto;padding-block:12px;scrollbar-width:none}
+.cities::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+.intro{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;padding-block:18px 8px}
+.intro h1{font-family:var(--display);font-weight:700;font-size:clamp(22px,4vw,34px);line-height:1.15;margin:0;text-wrap:balance}
+.intro h1 em{font-style:normal;color:var(--red)}
+.intro p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.stat{font-family:var(--display);font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.stat b{display:block;font-size:28px;color:var(--fg)}
+@media (max-width:560px){.intro{grid-template-columns:1fr}.stat{text-align:left}}
+
+h2.sec{font-family:var(--display);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:22px 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h2.sec small{font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted);font-size:13px}
+
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cat{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:104px;text-align:left;background:var(--c);color:#fff;border:0;border-radius:18px;padding:14px;transition:transform .15s ease}
+.cat .nm{font-weight:700;font-size:15px;line-height:1.2;max-width:78%;position:relative;z-index:1;text-wrap:balance}
+.cat .ct{font-size:12px;font-weight:500;color:var(--ct);font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.cat .ic{position:absolute;right:-8px;bottom:-12px;color:var(--ct);opacity:.9;pointer-events:none}
+.cat .ic svg{width:72px;height:72px;stroke-width:1.6}
+.cat:hover{transform:translateY(-2px)}
+.cat[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:3px}
+.cat[aria-pressed="true"] .nm::after{content:" ✓"}
+@media (prefers-reduced-motion:reduce){.cat{transition:none}.cat:hover{transform:none}}
+
+.subs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* feed */
+.feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:40px}
+.ad{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
+.ad:hover{border-color:var(--muted)}
+.ad .top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.ad .ttl{font-weight:600;font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.ad .txt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ad .bot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:6px;border-top:1px dashed var(--line)}
+.price{font-family:var(--display);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.price small{font-family:var(--body);font-weight:500;font-size:12px;color:var(--muted)}
+.loc{font-size:13px;color:var(--muted);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:6px;background:var(--sun);color:var(--sun-ink)}
+.tag.grey{background:var(--sunk);color:var(--muted)}
+
+.empty{grid-column:1/-1;border:2px dashed var(--line);border-radius:var(--r);padding:32px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--fg);font-size:17px;margin-bottom:6px}
+.empty .btn{margin-top:14px}
+.note{border-radius:var(--r);padding:12px 14px;background:var(--sunk);font-size:14px;margin-top:12px}
+.note.warn{border-left:4px solid var(--warn)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,6,5,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px max(18px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:20px;max-height:88vh}}
+.sheet h3{font-family:var(--display);font-size:20px;margin:0;line-height:1.25;text-wrap:balance;overflow-wrap:anywhere}
+.shead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.x{border:0;background:var(--sunk);width:36px;height:36px;border-radius:50%;flex:none;font-size:18px}
+.form{display:grid;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:460px){.row2{grid-template-columns:1fr}}
+label.f{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+label.f span.req{color:var(--red)}
+.f input,.f select,.f textarea{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;font-weight:400;color:var(--fg);width:100%;min-width:0}
+.f textarea{min-height:96px;resize:vertical}
+.check{display:flex;gap:10px;align-items:center;font-size:14px}
+.check input{width:20px;height:20px;accent-color:var(--red)}
+.err{color:var(--red);font-size:14px;font-weight:500;min-height:1em}
+.detail p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:14px 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.contact{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+.contact code{flex:1;font-family:var(--body);font-weight:600;font-size:16px;user-select:all;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;z-index:30;font-weight:500}
+.status{font-size:13px;color:var(--muted)}
+.tunduk{opacity:.95}
+.areaf{max-width:320px;margin-bottom:4px}
+footer{border-top:1px solid var(--line);padding-block:20px 32px;color:var(--muted);font-size:13px}
+footer p{margin:0 0 8px;max-width:70ch}
+.tag.hid{background:var(--red);color:var(--red-ink)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hrow">
+    <button class="logo" id="home" aria-label="Башкы бет">
+      <svg class="tunduk" width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="var(--sun)"/>
+        <circle cx="20" cy="20" r="9" fill="none" stroke="var(--red)" stroke-width="2.4"/>
+        <path d="M13 14.5 Q20 20 27 14.5 M13 25.5 Q20 20 27 25.5 M14.5 13 Q20 20 14.5 27 M25.5 13 Q20 20 25.5 27" fill="none" stroke="var(--red)" stroke-width="2"/>
+      </svg>
+      БИРГЕБИЗ
+    </button>
+    <form class="search" id="sform" role="search">
+      <input id="q" type="search" placeholder="Издөө: койка-место, патент, посылка…" aria-label="Издөө">
+    </form>
+    <button class="btn btn-sun" id="postBtn">+ Жарыя берүү</button>
+    <button class="btn btn-ghost-inv" id="mineBtn">Менин жарыяларым</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="cities" id="cities" aria-label="Шаарлар"></nav>
+  <label class="f areaf" id="areaWrap" hidden>Район / метро
+    <select id="areaSel"></select>
+  </label>
+
+  <section class="intro">
+    <div>
+      <h1>Россиядагы мекендештердин <em>жарыя тактасы</em></h1>
+      <p>Жумуш, койка-место, патент, посылка, билет, халал эт — баары бир жерде. Жарыяны мекендештер берет, мекендештер окуйт.</p>
+    </div>
+    <div class="stat"><b id="total">0</b>жарыя</div>
+  </section>
+
+  <h2 class="sec">Категориялар <small id="catHint">Бирөөнү тандаңыз</small></h2>
+  <div class="cats" id="cats"></div>
+  <div class="subs" id="subs"></div>
+
+  <h2 class="sec"><span id="feedTitle">Акыркы жарыялар</span> <small class="status" id="status">Жүктөлүүдө…</small></h2>
+  <div class="feed" id="feed"></div>
+</main>
+
+<footer class="wrap">
+  <p><b>БИРГЕБИЗ</b> — мекендештер үчүн бекер жарыя тактасы. Жарыяларды колдонуучулар өздөрү берет, алардын тууралыгы үчүн жарыя ээси жооп берет.</p>
+  <p>Эрежелер: алдамчылык, мыйзамсыз кызмат, тил тийгизүү жана жалган документ сунуштаган жарыяларга тыюу салынат. Шектүү жарыяга «Шикаят» басыңыз — 3 шикаяттан кийин ал жашырылат.</p>
+  <p>Эч качан алдын ала толук акча которбоңуз жана паспортуңузду бөтөн адамга бербеңиз.</p>
+</footer>
+
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+
+const CITIES=["Москва","Подмосковье","Санкт-Петербург","Екатеринбург","Новосибирск",
+ "Якутск","Красноярск","Иркутск","Сургут","Нижневартовск","Ханты-Мансийск","Тюмень","Новый Уренгой","Ноябрьск","Мурманск",
+ "Казань","Самара","Нижний Новгород","Уфа","Пермь","Челябинск","Омск","Томск",
+ "Калуга","Тула","Владимир","Воронеж","Краснодар","Ростов-на-Дону",
+ "Владивосток","Хабаровск","Башка шаар"];
+const AREAS={
+ "Москва":["ЦАО","САО","СВАО","ВАО","ЮВАО","ЮАО","ЮЗАО","ЗАО","СЗАО","Новая Москва","м. Люблино","м. Выхино","м. Котельники","м. Текстильщики","м. Марьино","м. Братиславская","м. Кузьминки","м. Рязанский проспект","м. Щёлковская","м. Черкизовская","м. Бульвар Рокоссовского","м. Тёплый Стан","м. Саларьево","м. Митино","м. Алтуфьево","м. Медведково","м. Бибирево","м. ВДНХ","м. Царицыно","м. Домодедовская"],
+ "Подмосковье":["Люберцы","Балашиха","Подольск","Мытищи","Химки","Котельники","Дзержинский","Реутов","Красногорск","Одинцово","Королёв","Щёлково","Видное","Домодедово","Раменское","Электросталь","Ногинск","Сергиев Посад","Пушкино","Лобня","Долгопрудный","Жуковский","Серпухов","Коломна"],
+ "Санкт-Петербург":["Адмиралтейский","Василеостровский","Выборгский","Калининский","Кировский","Колпинский","Красногвардейский","Красносельский","Московский","Невский","Приморский","Фрунзенский","Центральный","Пушкинский","Ленобласть: Мурино","Ленобласть: Кудрово","Ленобласть: Всеволожск","Ленобласть: Гатчина","Ленобласть: Тосно"],
+ "Екатеринбург":["Академический","Верх-Исетский","Железнодорожный","Кировский","Ленинский","Октябрьский","Орджоникидзевский (Уралмаш, Эльмаш)","Чкаловский"],
+ "Новосибирск":["Дзержинский","Железнодорожный","Заельцовский","Калининский","Кировский","Ленинский","Октябрьский","Первомайский","Советский","Центральный"],
+ "Якутск":["Автодорожный","Гагаринский","Губинский","Октябрьский","Промышленный","Сайсарский","Строительный","Центральный"],
+ "Красноярск":["Железнодорожный","Кировский","Ленинский","Октябрьский","Свердловский","Советский","Центральный"],
+ "Иркутск":["Ленинский","Октябрьский","Правобережный","Свердловский"],
+ "Тюмень":["Восточный","Калининский","Ленинский","Центральный"],
+ "Мурманск":["Ленинский","Октябрьский","Первомайский"],
+ "Казань":["Авиастроительный","Вахитовский","Кировский","Московский","Ново-Савиновский","Приволжский","Советский"],
+ "Самара":["Железнодорожный","Кировский","Красноглинский","Куйбышевский","Ленинский","Октябрьский","Промышленный","Самарский","Советский"],
+ "Нижний Новгород":["Автозаводский","Канавинский","Ленинский","Московский","Нижегородский","Приокский","Советский","Сормовский"],
+ "Уфа":["Дёмский","Калининский","Кировский","Ленинский","Октябрьский","Орджоникидзевский","Советский"],
+ "Пермь":["Дзержинский","Индустриальный","Кировский","Ленинский","Мотовилихинский","Орджоникидзевский","Свердловский"],
+ "Челябинск":["Калининский","Курчатовский","Ленинский","Металлургический","Советский","Тракторозаводский","Центральный"],
+ "Омск":["Кировский","Ленинский","Октябрьский","Советский","Центральный"],
+ "Томск":["Кировский","Ленинский","Октябрьский","Советский"],
+ "Тула":["Зареченский","Привокзальный","Пролетарский","Советский","Центральный"],
+ "Владимир":["Ленинский","Октябрьский","Фрунзенский"],
+ "Воронеж":["Железнодорожный","Коминтерновский","Левобережный","Ленинский","Советский","Центральный"],
+ "Краснодар":["Западный","Карасунский","Прикубанский","Центральный"],
+ "Ростов-на-Дону":["Ворошиловский","Железнодорожный","Кировский","Ленинский","Октябрьский","Первомайский","Пролетарский","Советский"],
+ "Владивосток":["Ленинский","Первомайский","Первореченский","Советский","Фрунзенский"],
+ "Хабаровск":["Железнодорожный","Индустриальный","Кировский","Краснофлотский","Центральный"]
+};
+
+const I={
+  work:'<path d="M4 8h16v11H4z M9 8V5h6v3 M4 13h16"/>',
+  home:'<path d="M4 11 12 4l8 7v9H4z M10 20v-5h4v5"/>',
+  law:'<path d="M12 4v16 M7 20h10 M5 8h14 M7 8l-3 6h6z M17 8l-3 6h6z"/>',
+  money:'<path d="M3 7h18v10H3z M12 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 0 0 0-5 M6 10v4 M18 10v4"/>',
+  box:'<path d="M4 8 12 4l8 4v8l-8 4-8-4z M4 8l8 4 8-4 M12 12v8"/>',
+  bus:'<path d="M5 5h14v11H5z M5 11h14 M7 19v-3 M17 19v-3 M8 14h.01 M16 14h.01"/>',
+  plane:'<path d="M3 13l18-7-5 14-3-6z M13 14l3-5"/>',
+  med:'<path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z"/>',
+  scissor:'<path d="M7 7a2.5 2.5 0 1 0 0 .01 M7 17a2.5 2.5 0 1 0 0 .01 M9 8l11 9 M9 16l11-9"/>',
+  food:'<path d="M5 11h14a7 7 0 0 1-14 0z M8 8c0-2 2-2 2-4 M13 8c0-2 2-2 2-4 M4 20h16"/>',
+  edu:'<path d="M2 9l10-5 10 5-10 5z M6 11v5c3 2 9 2 12 0v-5 M22 9v6"/>',
+  car:'<path d="M5 16V11l2-5h10l2 5v5z M5 11h14 M7 19v-3 M17 19v-3 M8 13.5h.01 M16 13.5h.01"/>',
+  heart:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  tag:'<path d="M3 12V4h8l10 10-8 8z M7.5 8.5h.01"/>'
+};
+const CATS=[
+ {id:"job",nm:"Жумуш",ic:"work",subs:["Курулуш","Склад / сортировка","Курьер","Клининг","Такси / айдоочу","Кафе / тамак-аш","Башка жумуш"],unit:["күнүнө","жумасына","айына","саатына"]},
+ {id:"house",nm:"Турак жай",ic:"home",subs:["Койка-место","Бөлмө","Батир","Конок үй"],unit:["айына","күнүнө","жумасына"]},
+ {id:"law",nm:"Юридикалык кызмат",ic:"law",subs:["Патент","Регистрация","РВП / ВНЖ","Жарандык","Эмгек келишими","Депорт / тыюу маселеси","Консультация"]},
+ {id:"fin",nm:"Акча которуу, каржы",ic:"money",subs:["Акча которуу","Микрокредит / заем"]},
+ {id:"cargo",nm:"Посылка / жүк",ic:"box",subs:["Посылка","Жүк ташуу","Контейнер"],unit:["кг үчүн","даана"]},
+ {id:"ride",nm:"Жүргүнчү ташуу",ic:"bus",subs:["Автобус","Шаар аралык такси"],unit:["бир кишиге"]},
+ {id:"ticket",nm:"Авиа / ж-д билет",ic:"plane",subs:["Авиабилет","Поезд","Акциялар"]},
+ {id:"med",nm:"Медицина",ic:"med",subs:["Стоматология","Гинекология","УЗИ / анализ","Терапевт","Башка дарыгер"]},
+ {id:"beauty",nm:"Сулуулук",ic:"scissor",subs:["Эркек мастер","Аял мастер","Маникюр / косметолог"]},
+ {id:"food",nm:"Тамак-аш, кафе",ic:"food",subs:["Халал эт","Мекен азыктары","Кафе / той-аш","Тамак жеткирүү"],unit:["кг","даана","кишиге"]},
+ {id:"edu",nm:"Билим жана курстар",ic:"edu",subs:["Орус тили","Англис тили","Патентке экзамен (тил, тарых, мыйзам)","Бухгалтерия","IT курстар","Маникюр / чачтарач курсу","Айдоочулук курс","Башка кесип","Мектепке / бала бакчага даярдоо"],unit:["айына","курс үчүн","сабак үчүн"]},
+ {id:"auto",nm:"Авто кызмат",ic:"car",subs:["Машина оңдоо","Автотетиктер","Унаа сатуу / сатып алуу","Унаа каттоо, техосмотр, ОСАГО","Права алмаштыруу / консультация","Шиномонтаж / автожуучу"],unit:["даана","кызмат үчүн"]},
+ {id:"help",nm:"Кайрымдуулук, колдоо",ic:"heart",subs:["Жардам керек","Акча чогултуу","Фонддор","Диаспора / элчилик кулактандыруулары","Юридикалык / социалдык борборлор","Жоголгон адам / документ"]},
+ {id:"market",nm:"Барахолка",ic:"tag",subs:["Телефон / техника","Тиричилик техникасы","Эмерек","Кийим-кечек","Балдар үчүн","Алмашуу","Бекер берем"],unit:["даана"]}
+];
+const CAT=Object.fromEntries(CATS.map(c=>[c.id,c]));
+const CCOL={job:["#B8700F","#FCE6BF"],house:["#178A66","#CFF2E4"],law:["#5148B5","#DEDBFC"],fin:["#3E7314","#DCEFC4"],cargo:["#D0532A","#FFDCCD"],ride:["#185FA5","#CFE3F8"],ticket:["#2C7FD1","#D9EAFB"],med:["#D63B3A","#FFD8D8"],beauty:["#C9467A","#FAD6E4"],food:["#8E3818","#F7D2C2"],edu:["#6A3FB5","#E5DAFB"],auto:["#44515E","#DCE3EA"],help:["#C8102E","#FFD6DC"],market:["#0E7C86","#CDEFF1"]};
+const WARN={
+  law:"Патент же документ үчүн толук акчаны алдын ала которбоңуз. Расмий төлөм квитанцияны текшериңиз.",
+  fin:"Карта номериңизди, SMS кодду жана паролду эч кимге бербеңиз. Заем алуудан мурун пайызын жазуу түрүндө сураңыз.",
+  job:"Паспортуңузду иш берүүчүгө таштап кетпеңиз. Төлөмдү, графикти жана эмгек келишимин жумуштан мурун тактаңыз.",
+  house:"Батирди көрбөй туруп алдын ала акча которбоңуз.",
+  help:"Акча которуудан мурун адамдын жакындарына же фонддун расмий барагына чалып текшериңиз. Жеке картага чогултулган акчадан сак болуңуз.",
+  market:"Буюмду көрүп, текшерип туруп сатып алыңыз. Телефондун IMEI номерин текшериңиз.",
+  auto:"Алдын ала толук төлөбөңүз. Праваны алмаштыруу расмий ГИБДД аркылуу гана жүрөт."
+};
+const icon=k=>'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[k]+'</svg>';
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat("ru-RU").format(n);
+function ago(t){const m=Math.floor((Date.now()-t)/6e4);if(m<1)return"жаңы эле";if(m<60)return m+" мүн. мурун";const h=Math.floor(m/60);if(h<24)return h+" саат мурун";const d=Math.floor(h/24);return d<30?d+" күн мурун":new Date(t).toLocaleDateString("ru-RU")}
+function priceHtml(a){if(a.price==null||a.price==="")return'<span class="price">Келишим</span>';return'<span class="price">'+fmt(a.price)+" "+(a.cur==="KGS"?"сом":"₽")+(a.per?' <small>'+esc(a.per)+'</small>':'')+'</span>'}
+
+const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,ready:false,offline:false,admin:false,token:"",adminTok:""};
+function rnd(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
+try{S.token=localStorage.getItem("bb_token")||"";if(!S.token){S.token=rnd();localStorage.setItem("bb_token",S.token)}}catch(e){S.token=S.token||rnd()}
+try{const u=new URL(location.href),a=u.searchParams.get("admin");if(a!==null){a?localStorage.setItem("bb_admin",a):localStorage.removeItem("bb_admin");u.searchParams.delete("admin");history.replaceState(null,"",u.pathname+u.search+u.hash)}S.adminTok=localStorage.getItem("bb_admin")||""}catch(e){}
+async function api(path,opts={}){
+  const hd={"X-Owner-Token":S.token};if(S.adminTok)hd["X-Admin-Token"]=S.adminTok;if(opts.body)hd["Content-Type"]="application/json";
+  const r=await fetch(path,Object.assign({},opts,{headers:hd}));let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw{message:j.error||("Сервер ката берди ("+r.status+"). Кайра аракет кылыңыз.")};return j}
+try{const c=localStorage.getItem("bb_city");if(c&&CITIES.includes(c))S.city=c}catch(e){}
+
+function renderCities(){
+  $("cities").innerHTML=['<button class="chip" data-c="" aria-pressed="'+(!S.city)+'">Бардык шаарлар</button>'].concat(CITIES.map(c=>'<button class="chip" data-c="'+esc(c)+'" aria-pressed="'+(S.city===c)+'">'+esc(c)+'</button>')).join("");
+  const ar=S.city&&AREAS[S.city];
+  $("areaWrap").hidden=!ar;
+  if(ar)$("areaSel").innerHTML='<option value="">Бардык райондор</option>'+ar.map(x=>'<option'+(x===S.area?' selected':'')+'>'+esc(x)+'</option>').join("");
+}
+function filtered(){
+  const q=S.q.trim().toLowerCase();
+  return S.ads.filter(a=>(!S.mine||a.mine)&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||a.sub===S.sub)&&(!q||[a.title,a.text,a.sub,a.area,a.city].join(" ").toLowerCase().includes(q))).sort((x,y)=>y.created-x.created);
+}
+function renderCats(){
+  const base=S.ads.filter(a=>!S.city||a.city===S.city);
+  $("cats").innerHTML=CATS.map(c=>{const n=base.filter(a=>a.cat===c.id).length;const k=CCOL[c.id];return'<button class="cat" style="--c:'+k[0]+';--ct:'+k[1]+'" data-cat="'+c.id+'" aria-pressed="'+(S.cat===c.id)+'"><span class="ic">'+icon(c.ic)+'</span><span class="nm">'+esc(c.nm)+'</span><span class="ct">'+n+' жарыя</span></button>'}).join("");
+  const c=S.cat&&CAT[S.cat];
+  $("subs").innerHTML=c?['<button class="chip" data-sub="" aria-pressed="'+(!S.sub)+'">Баары</button>'].concat(c.subs.map(s=>'<button class="chip" data-sub="'+esc(s)+'" aria-pressed="'+(S.sub===s)+'">'+esc(s)+'</button>')).join(""):"";
+  $("catHint").textContent=c?"Тандалды: "+c.nm:"Бирөөнү тандаңыз";
+}
+function renderFeed(){
+  const list=filtered();
+  $("total").textContent=fmt(S.ads.length);
+  let t=S.mine?"Менин жарыяларым":S.cat?CAT[S.cat].nm+(S.sub?" · "+S.sub:""):"Акыркы жарыялар";
+  if(S.city&&!S.mine)t+=" — "+S.city+(S.area?", "+S.area:"");
+  $("feedTitle").textContent=t;
+  if(S.ready)$("status").textContent=list.length+" табылды";
+  if(!list.length){
+    let msg;
+    if(S.offline) msg='<b>Серверге туташкан жок</b>Интернетти текшерип, баракты жаңыртыңыз.';
+    else if(!S.ready) msg='<b>Жарыялар жүктөлүүдө…</b>Бир аз күтө туруңуз.';
+    else if(S.mine) msg='<b>Сизде азырынча жарыя жок</b>Биринчи жарыяңызды бериңиз — бекер.';
+    else if(!S.ads.length) msg='<b>Биринчи жарыяны сиз бериңиз</b>Жумуш, койка-место, посылка же кызмат — мекендештер ушул жерден издейт.';
+    else msg='<b>Бул тандоо боюнча жарыя табылган жок</b>Башка шаарды же категорияны тандап көрүңүз.';
+    $("feed").innerHTML='<div class="empty">'+msg+(!S.offline?'<br><button class="btn btn-red" data-act="post">+ Жарыя берүү</button>':'')+'</div>';
+    return;
+  }
+  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine)?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
+}
+function render(){renderCities();renderCats();renderFeed()}
+
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
+function closeSheet(){$("layer").innerHTML=""}
+function openSheet(html){
+  $("layer").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';
+  $("scrim").addEventListener("click",e=>{if(e.target.id==="scrim"||e.target.closest("[data-close]"))closeSheet()});
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+
+function openDetail(key){
+  const a=S.ads.find(x=>x.id===key);if(!a)return;
+  const c=CAT[a.cat]||{};
+  const mine=!!a.mine, canDel=mine||S.admin;
+  const contacts=[["Телефон",a.phone],["WhatsApp",a.wa],["Telegram",a.tg]].filter(x=>x[1]);
+  openSheet('<div class="shead"><div><div class="status">'+esc(c.nm)+" · "+esc(a.sub)+" · "+ago(a.created)+'</div><h3>'+esc(a.title)+'</h3></div><button class="x" data-close aria-label="Жабуу">✕</button></div>'
+    +'<div class="detail">'+priceHtml(a)+(a.forKg?' <span class="tag">Мекендештерге</span>':'')
+    +'<dl class="kv"><dt>Шаар</dt><dd>'+esc(a.city)+'</dd>'+(a.area?'<dt>Район / метро</dt><dd>'+esc(a.area)+'</dd>':'')+(a.name?'<dt>Байланыш</dt><dd>'+esc(a.name)+'</dd>':'')+'</dl>'
+    +'<p>'+esc(a.text)+'</p>'
+    +contacts.map((x,i)=>'<div class="contact"><span class="status" style="width:74px">'+x[0]+'</span><code id="cv'+i+'">'+esc(x[1])+'</code><button class="btn btn-ghost" data-copy="cv'+i+'">Көчүрүү</button></div>').join("")
+    +(WARN[a.cat]?'<div class="note warn">'+esc(WARN[a.cat])+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap" id="delzone">'
+    +(canDel?'<button class="btn btn-ghost" data-del="'+esc(a.id)+'">'+(mine?"Жарыяны өчүрүү":"Модерация: өчүрүү")+'</button>':'')
+    +(S.admin&&a.hidden?'<button class="btn btn-ghost" data-unhide="'+esc(a.id)+'">Кайра ачуу</button>':'')
+    +(!mine?'<button class="btn btn-ghost" data-report="'+esc(a.id)+'">Шикаят кылуу</button>':'')
+    +'</div>'
+    +'</div>');
+}
+
+function opts(arr,sel){return arr.map(v=>'<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>').join("")}
+function openPost(){
+  const c0=S.cat||"job";
+  openSheet('<div class="shead"><h3>Жаңы жарыя</h3><button class="x" data-close aria-label="Жабуу">✕</button></div>'
+  +'<form class="form" id="pform" novalidate>'
+  +'<div class="row2"><label class="f">Категория <span class="req">*</span><select id="fcat">'+CATS.map(c=>'<option value="'+c.id+'"'+(c.id===c0?' selected':'')+'>'+esc(c.nm)+'</option>').join("")+'</select></label>'
+  +'<label class="f">Түрү <span class="req">*</span><select id="fsub"></select></label></div>'
+  +'<label class="f">Аталышы <span class="req">*</span><input id="ftitle" maxlength="80" placeholder="Мис.: Складка грузчик керек, төлөм күн сайын"></label>'
+  +'<label class="f">Толук маалымат <span class="req">*</span><textarea id="ftext" maxlength="1500" placeholder="Шарттар, график, документтер, дареги…"></textarea></label>'
+  +'<div class="row2"><label class="f">Баасы (бош калса — келишим)<input id="fprice" inputmode="numeric" placeholder="3500"></label>'
+  +'<div class="row2"><label class="f">Валюта<select id="fcur"><option value="RUB">₽ рубль</option><option value="KGS">сом</option></select></label><label class="f">Ченем<select id="fper"></select></label></div></div>'
+  +'<div class="row2"><label class="f">Шаар <span class="req">*</span><select id="fcity">'+opts(CITIES,S.city||"Москва")+'</select></label>'
+  +'<label class="f">Район / метро<input id="farea" maxlength="60" list="fareaList" autocomplete="off" placeholder="Тизмеден тандаңыз же жазыңыз"><datalist id="fareaList"></datalist></label></div>'
+  +'<div class="row2"><label class="f">Аты-жөнү<input id="fname" maxlength="40" placeholder="Азамат"></label>'
+  +'<label class="f">Телефон<input id="fphone" inputmode="tel" maxlength="24" placeholder="+7 900 000-00-00"></label></div>'
+  +'<div class="row2"><label class="f">WhatsApp<input id="fwa" inputmode="tel" maxlength="24" placeholder="+996 700 00 00 00"></label>'
+  +'<label class="f">Telegram<input id="ftg" maxlength="40" placeholder="@username"></label></div>'
+  +'<label class="check"><input type="checkbox" id="fkg"> «Мекендештерге» белгиси</label>'
+  +'<div class="err" id="ferr" role="alert"></div>'
+  +'<button class="btn btn-red" type="submit" id="fsend" style="justify-content:center">Жарыяны жайгаштыруу</button>'
+  +'<div class="status">Жарыяңызды каалаган убакта өзүңүз өчүрө аласыз. Алдамчылык жарыялар модерация тарабынан өчүрүлөт.</div>'
+  +'</form>');
+  const fill=()=>{const c=CAT[$("fcat").value];$("fsub").innerHTML=opts(c.subs);$("fper").innerHTML='<option value="">—</option>'+opts(c.unit||[])};
+  fill();$("fcat").addEventListener("change",fill);
+  const fillArea=()=>{const a=AREAS[$("fcity").value]||[];$("fareaList").innerHTML=a.map(x=>'<option value="'+esc(x)+'"></option>').join("");$("farea").placeholder=a.length?"Тизмеден тандаңыз же жазыңыз":"Мис.: Центр, Северный"};
+  fillArea();$("fcity").addEventListener("change",()=>{$("farea").value="";fillArea()});
+  $("pform").addEventListener("submit",submitPost);
+}
+
+async function submitPost(e){
+  e.preventDefault();
+  const v=id=>$(id).value.trim();
+  const priceRaw=v("fprice").replace(/[\s ]/g,"");
+  const ad={cat:v("fcat"),sub:v("fsub"),title:v("ftitle"),text:v("ftext"),price:priceRaw?Number(priceRaw):null,cur:v("fcur"),per:v("fper"),city:v("fcity"),area:v("farea"),name:v("fname"),phone:v("fphone"),wa:v("fwa"),tg:v("ftg"),forKg:$("fkg").checked};
+  const err=$("ferr");
+  if(ad.title.length<5)return err.textContent="Аталышы жок же өтө кыска (5 тамгадан кем эмес).";
+  if(ad.text.length<10)return err.textContent="Толук маалыматты жазыңыз (10 тамгадан кем эмес).";
+  if(priceRaw&&!(ad.price>=0))return err.textContent="Баасына сан гана жазыңыз, мис.: 3500.";
+  if(!ad.phone&&!ad.wa&&!ad.tg)return err.textContent="Жок дегенде бир байланыш жазыңыз: телефон, WhatsApp же Telegram.";
+  err.textContent="";$("fsend").disabled=true;$("fsend").textContent="Жайгаштырылууда…";
+  try{
+    const saved=await api("/api/ads",{method:"POST",body:JSON.stringify(ad)});
+    S.ads.unshift(saved);
+    closeSheet();toast("Жарыя жайгаштырылды");
+    S.cat=ad.cat;S.sub=null;S.mine=false;render();
+  }catch(x){$("fsend").disabled=false;$("fsend").textContent="Жарыяны жайгаштыруу";err.textContent=(x&&x.message)||"Сакталган жок. Интернетти текшерип, кайра басыңыз."}
+}
+
+async function delAd(key){
+  const a=S.ads.find(x=>x.id===key);if(!a)return;
+  const z=$("delzone");
+  if(!z.dataset.confirm){z.dataset.confirm="1";z.innerHTML='<span style="align-self:center">Чын эле өчүрөсүзбү?</span><button class="btn btn-red" data-del="'+esc(key)+'">Ооба, өчүрүү</button><button class="btn btn-ghost" data-close>Жок</button>';return}
+  try{
+    await api("/api/ads/"+encodeURIComponent(a.id),{method:"DELETE"});
+    S.ads=S.ads.filter(x=>x.id!==a.id);closeSheet();render();toast("Жарыя өчүрүлдү");
+  }catch(x){toast("Өчүрүлгөн жок: "+((x&&x.message)||"кайра аракет кылыңыз"))}
+}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.c!==undefined){S.city=t.dataset.c||null;S.area=null;try{localStorage.setItem("bb_city",S.city||"")}catch(x){}render();return}
+  if(t.dataset.cat){S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;render();return}
+  if(t.dataset.sub!==undefined){S.sub=t.dataset.sub||null;render();return}
+  if(t.dataset.ad){openDetail(t.dataset.ad);return}
+  if(t.dataset.del){delAd(t.dataset.del);return}
+  if(t.dataset.report){const id=t.dataset.report;t.disabled=true;api("/api/ads/"+encodeURIComponent(id)+"/report",{method:"POST"}).then(()=>{t.textContent="Шикаят кабыл алынды";toast("Рахмат, модерация карап чыгат")},x=>{t.disabled=false;toast(x.message)});return}
+  if(t.dataset.unhide){api("/api/ads/"+encodeURIComponent(t.dataset.unhide)+"/unhide",{method:"POST"}).then(()=>{closeSheet();load();toast("Жарыя кайра ачылды")},x=>toast(x.message));return}
+  if(t.dataset.act==="post"){openPost();return}
+  if(t.dataset.copy){const el=$(t.dataset.copy);const txt=el.textContent;
+    try{navigator.clipboard.writeText(txt).then(()=>toast("Көчүрүлдү"),()=>sel(el))}catch(x){sel(el)}return}
+});
+function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Белгиленди — көчүрүп алыңыз")}
+$("postBtn").onclick=openPost;
+$("mineBtn").onclick=()=>{S.mine=!S.mine;S.cat=null;S.sub=null;$("mineBtn").textContent=S.mine?"Бардык жарыялар":"Менин жарыяларым";render()};
+$("home").onclick=()=>{S.cat=S.sub=null;S.mine=false;S.q="";$("q").value="";$("mineBtn").textContent="Менин жарыяларым";render();scrollTo({top:0,behavior:"smooth"})};
+$("sform").addEventListener("submit",e=>e.preventDefault());
+$("q").addEventListener("input",e=>{S.q=e.target.value;renderFeed()});
+$("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderFeed()});
+
+render();
+
+async function load(){
+  try{const j=await api("/api/ads");S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=!!j.admin;S.offline=false}
+  catch(x){S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
+  S.ready=true;render();
+}
+load();
+setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+})();
+</script>
+</body>
+</html>

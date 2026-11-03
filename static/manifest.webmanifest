@@ -1,0 +1,16 @@
+{
+  "name": "БИРГЕБИЗ — мекендештердин жарыя тактасы",
+  "short_name": "БИРГЕБИЗ",
+  "description": "Россиядагы кыргыз мекендештер үчүн бекер жарыялар: жумуш, турак жай, патент, посылка, билет.",
+  "lang": "ky",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ef",
+  "theme_color": "#c8102e",
+  "icons": [
+    {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}
