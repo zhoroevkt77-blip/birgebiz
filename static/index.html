@@ -129,6 +129,27 @@ label.f span.req{color:var(--red)}
 .status{font-size:13px;color:var(--muted)}
 .tunduk{opacity:.95}
 .areaf{max-width:320px;margin-bottom:4px}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;background:var(--surface);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:-.2px;min-width:0}
+.tab span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tab .ti{font-size:24px;line-height:1.1;filter:grayscale(.15)}
+.tab[aria-current="page"]{color:var(--fg);font-weight:800}
+.tab-post{color:var(--fg);font-weight:800}
+.tab-post .plus{width:58px;height:58px;margin-top:-30px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;border:4px solid var(--sun);box-sizing:border-box}
+.tab-post:active .plus{transform:scale(.95)}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;font-weight:800;font-size:16px;letter-spacing:-.3px;color:var(--fg)}
+.mrow .mi{width:44px;height:44px;flex:none;border-radius:12px;background:var(--sun);display:grid;place-items:center;font-size:22px}
+.mrow small{display:block;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:0}
+.mrow .chev{margin-left:auto;color:var(--muted);font-weight:400}
+.mlist{display:grid;gap:10px}
+.faq{display:grid;gap:8px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.faq summary{font-weight:800;cursor:pointer;letter-spacing:-.2px}
+.faq p{margin:8px 0 0;color:var(--muted)}
+.favbtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 14px;font-weight:800}
+.favbtn[aria-pressed="true"]{border-color:var(--red);color:var(--red)}
+.toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 footer{border-top:1px solid var(--line);padding-block:20px 32px;color:var(--muted);font-size:13px}
 footer p{margin:0 0 8px;max-width:70ch}
 .tag.hid{background:var(--red);color:var(--red-ink)}
@@ -150,8 +171,6 @@ footer p{margin:0 0 8px;max-width:70ch}
     <form class="search" id="sform" role="search">
       <input id="q" type="search" placeholder="Издөө: койка-место, патент, посылка…" aria-label="Издөө">
     </form>
-    <button class="btn btn-sun" id="postBtn">+ Жарыя берүү</button>
-    <button class="btn btn-ghost-inv" id="mineBtn">Менин жарыяларым</button>
   </div>
 </header>
 
@@ -182,6 +201,14 @@ footer p{margin:0 0 8px;max-width:70ch}
   <p>Эрежелер: алдамчылык, мыйзамсыз кызмат, тил тийгизүү жана жалган документ сунуштаган жарыяларга тыюу салынат. Шектүү жарыяга «Шикаят» басыңыз — 3 шикаяттан кийин ал жашырылат.</p>
   <p>Эч качан алдын ала толук акча которбоңуз жана паспортуңузду бөтөн адамга бербеңиз.</p>
 </footer>
+
+<nav class="tabbar" aria-label="Негизги меню">
+  <button class="tab" data-tab="home" aria-current="page"><span class="ti" aria-hidden="true">🏠</span><span>Башкы бет</span></button>
+  <button class="tab" data-tab="fav"><span class="ti" aria-hidden="true">❤️</span><span>Тандалган</span></button>
+  <button class="tab tab-post" data-tab="post"><span class="plus" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span>Жарыя берүү</span></button>
+  <button class="tab" data-tab="help"><span class="ti" aria-hidden="true">❓</span><span>Жардам</span></button>
+  <button class="tab" data-tab="me"><span class="ti" aria-hidden="true">👤</span><span>Кабинет</span></button>
+</nav>
 
 <div id="layer"></div>
 
@@ -272,10 +299,13 @@ const fmt=n=>new Intl.NumberFormat("ru-RU").format(n);
 function ago(t){const m=Math.floor((Date.now()-t)/6e4);if(m<1)return"жаңы эле";if(m<60)return m+" мүн. мурун";const h=Math.floor(m/60);if(h<24)return h+" саат мурун";const d=Math.floor(h/24);return d<30?d+" күн мурун":new Date(t).toLocaleDateString("ru-RU")}
 function priceHtml(a){if(a.price==null||a.price==="")return'<span class="price">Келишим</span>';return'<span class="price">'+fmt(a.price)+" "+(a.cur==="KGS"?"сом":"₽")+(a.per?' <small>'+esc(a.per)+'</small>':'')+'</span>'}
 
-const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,ready:false,offline:false,admin:false,token:"",adminTok:""};
+const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,fav:false,favs:[],ready:false,offline:false,admin:false,token:"",adminTok:""};
 function rnd(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
 try{S.token=localStorage.getItem("bb_token")||"";if(!S.token){S.token=rnd();localStorage.setItem("bb_token",S.token)}}catch(e){S.token=S.token||rnd()}
 try{const u=new URL(location.href),a=u.searchParams.get("admin");if(a!==null){a?localStorage.setItem("bb_admin",a):localStorage.removeItem("bb_admin");u.searchParams.delete("admin");history.replaceState(null,"",u.pathname+u.search+u.hash)}S.adminTok=localStorage.getItem("bb_admin")||""}catch(e){}
+try{S.favs=JSON.parse(localStorage.getItem("bb_favs")||"[]")}catch(e){S.favs=[]}
+function saveFavs(){try{localStorage.setItem("bb_favs",JSON.stringify(S.favs))}catch(e){}}
+const isFav=id=>S.favs.includes(id);
 async function api(path,opts={}){
   const hd={"X-Owner-Token":S.token};if(S.adminTok)hd["X-Admin-Token"]=S.adminTok;if(opts.body)hd["Content-Type"]="application/json";
   const r=await fetch(path,Object.assign({},opts,{headers:hd}));let j={};try{j=await r.json()}catch(e){}
@@ -290,7 +320,7 @@ function renderCities(){
 }
 function filtered(){
   const q=S.q.trim().toLowerCase();
-  return S.ads.filter(a=>(!S.mine||a.mine)&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||a.sub===S.sub)&&(!q||[a.title,a.text,a.sub,a.area,a.city].join(" ").toLowerCase().includes(q))).sort((x,y)=>y.created-x.created);
+  return S.ads.filter(a=>(!S.mine||a.mine)&&(!S.fav||isFav(a.id))&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||a.sub===S.sub)&&(!q||[a.title,a.text,a.sub,a.area,a.city].join(" ").toLowerCase().includes(q))).sort((x,y)=>y.created-x.created);
 }
 function renderCats(){
   const base=S.ads.filter(a=>!S.city||a.city===S.city);
@@ -302,26 +332,27 @@ function renderCats(){
 function renderFeed(){
   const list=filtered();
   $("total").textContent=fmt(S.ads.length);
-  let t=S.mine?"Менин жарыяларым":S.cat?CAT[S.cat].nm+(S.sub?" · "+S.sub:""):"Акыркы жарыялар";
-  if(S.city&&!S.mine)t+=" — "+S.city+(S.area?", "+S.area:"");
+  let t=S.fav?"Тандалгандар":S.mine?"Менин жарыяларым":S.cat?CAT[S.cat].nm+(S.sub?" · "+S.sub:""):"Акыркы жарыялар";
+  if(S.city&&!S.mine&&!S.fav)t+=" — "+S.city+(S.area?", "+S.area:"");
   $("feedTitle").textContent=t;
   if(S.ready)$("status").textContent=list.length+" табылды";
   if(!list.length){
     let msg;
     if(S.offline) msg='<b>Жарыялар азыр жүктөлбөй жатат</b>'+esc(S.err||"Интернетти текшерип, баракты жаңыртыңыз.");
     else if(!S.ready) msg='<b>Жарыялар жүктөлүүдө…</b>Бир аз күтө туруңуз.';
+    else if(S.fav) msg='<b>Тандалган жарыя жок</b>Жарыяны ачып, ❤️ Тандалганга кошуу баскычын басыңыз.';
     else if(S.mine) msg='<b>Сизде азырынча жарыя жок</b>Биринчи жарыяңызды бериңиз — бекер.';
     else if(!S.ads.length) msg='<b>Биринчи жарыяны сиз бериңиз</b>Жумуш, койка-место, посылка же кызмат — мекендештер ушул жерден издейт.';
     else msg='<b>Бул тандоо боюнча жарыя табылган жок</b>Башка шаарды же категорияны тандап көрүңүз.';
     $("feed").innerHTML='<div class="empty">'+msg+(!S.offline?'<br><button class="btn btn-red" data-act="post">+ Жарыя берүү</button>':'')+'</div>';
     return;
   }
-  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine)?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
+  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine||isFav(a.id))?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(isFav(a.id)?'<span class="tag grey">❤️</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
 }
 function render(){renderCities();renderCats();renderFeed()}
 
 function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
-function closeSheet(){$("layer").innerHTML=""}
+function closeSheet(){$("layer").innerHTML="";setTab(S.fav?"fav":S.mine?"me":"home")}
 function openSheet(html){
   $("layer").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';
   $("scrim").addEventListener("click",e=>{if(e.target.id==="scrim"||e.target.closest("[data-close]"))closeSheet()});
@@ -340,6 +371,7 @@ function openDetail(key){
     +contacts.map((x,i)=>'<div class="contact"><span class="status" style="width:74px">'+x[0]+'</span><code id="cv'+i+'">'+esc(x[1])+'</code><button class="btn btn-ghost" data-copy="cv'+i+'">Көчүрүү</button></div>').join("")
     +(WARN[a.cat]?'<div class="note warn">'+esc(WARN[a.cat])+'</div>':'')
     +'<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap" id="delzone">'
+    +'<button class="favbtn" data-fav="'+esc(a.id)+'" aria-pressed="'+isFav(a.id)+'">'+(isFav(a.id)?"❤️ Тандалганда":"🤍 Тандалганга кошуу")+'</button>'
     +(canDel?'<button class="btn btn-ghost" data-del="'+esc(a.id)+'">'+(mine?"Жарыяны өчүрүү":"Модерация: өчүрүү")+'</button>':'')
     +(S.admin&&a.hidden?'<button class="btn btn-ghost" data-unhide="'+esc(a.id)+'">Кайра ачуу</button>':'')
     +(!mine?'<button class="btn btn-ghost" data-report="'+esc(a.id)+'">Шикаят кылуу</button>':'')
@@ -408,9 +440,12 @@ async function delAd(key){
 document.addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.c!==undefined){S.city=t.dataset.c||null;S.area=null;try{localStorage.setItem("bb_city",S.city||"")}catch(x){}render();return}
-  if(t.dataset.cat){S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;render();return}
+  if(t.dataset.cat){S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;S.fav=false;setTab("home");render();return}
   if(t.dataset.sub!==undefined){S.sub=t.dataset.sub||null;render();return}
   if(t.dataset.ad){openDetail(t.dataset.ad);return}
+  if(t.dataset.fav){const id=t.dataset.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[id].concat(S.favs);saveFavs();const on=isFav(id);t.setAttribute("aria-pressed",on);t.textContent=on?"❤️ Тандалганда":"🤍 Тандалганга кошуу";toast(on?"Тандалганга кошулду":"Тандалгандан алынды");renderFeed();return}
+  if(t.dataset.tab){goTab(t.dataset.tab);return}
+  if(t.dataset.go){closeSheet();goTab(t.dataset.go);return}
   if(t.dataset.del){delAd(t.dataset.del);return}
   if(t.dataset.report){const id=t.dataset.report;t.disabled=true;api("/api/ads/"+encodeURIComponent(id)+"/report",{method:"POST"}).then(()=>{t.textContent="Шикаят кабыл алынды";toast("Рахмат, модерация карап чыгат")},x=>{t.disabled=false;toast(x.message)});return}
   if(t.dataset.unhide){api("/api/ads/"+encodeURIComponent(t.dataset.unhide)+"/unhide",{method:"POST"}).then(()=>{closeSheet();load();toast("Жарыя кайра ачылды")},x=>toast(x.message));return}
@@ -419,9 +454,39 @@ document.addEventListener("click",e=>{
     try{navigator.clipboard.writeText(txt).then(()=>toast("Көчүрүлдү"),()=>sel(el))}catch(x){sel(el)}return}
 });
 function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Белгиленди — көчүрүп алыңыз")}
-$("postBtn").onclick=openPost;
-$("mineBtn").onclick=()=>{S.mine=!S.mine;S.cat=null;S.sub=null;$("mineBtn").textContent=S.mine?"Бардык жарыялар":"Менин жарыяларым";render()};
-$("home").onclick=()=>{S.cat=S.sub=null;S.mine=false;S.q="";$("q").value="";$("mineBtn").textContent="Менин жарыяларым";render();scrollTo({top:0,behavior:"smooth"})};
+function setTab(name){document.querySelectorAll(".tab[data-tab]").forEach(b=>{if(b.dataset.tab===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")})}
+function toFeed(){const f=$("feedTitle");if(f)f.scrollIntoView({behavior:"smooth",block:"start"})}
+function goTab(name){
+  if(name==="post"){openPost();return}
+  if(name==="home"){closeSheet();S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";$("q").value="";setTab("home");render();scrollTo({top:0,behavior:"smooth"});return}
+  if(name==="fav"){closeSheet();S.fav=true;S.mine=false;S.cat=S.sub=null;setTab("fav");render();toFeed();return}
+  if(name==="mine"){S.mine=true;S.fav=false;S.cat=S.sub=null;setTab("me");render();toFeed();return}
+  if(name==="help"){openHelp();return}
+  if(name==="me"){openMe();return}
+}
+function openHelp(){
+  const q=[["Жарыяны кантип берем?","Ылдыйдагы кызыл «+» баскычын басыңыз, категорияны, шаарды жана байланышты жазыңыз. Жарыя ошол замат чыгат. Бекер."],
+  ["Жарыямды кантип өчүрөм?","Кабинет → Менин жарыяларым. Жарыяны ачып, «Жарыяны өчүрүү» басыңыз. Жарыяны кайсы телефондон берсеңиз, ошол телефондон гана өчүрө аласыз."],
+  ["Жарыя канча убакыт турат?","60 күн. Андан кийин тизмеден өзү чыгып кетет, керек болсо кайра бериңиз."],
+  ["Алдамчыдан кантип сак болом?","Алдын ала толук акча которбоңуз. Паспортуңузду бөтөн адамга бербеңиз. Патент, каттоо жана документтерди расмий жерден текшериңиз. Шектүү жарыяга «Шикаят кылуу» басыңыз."],
+  ["Шикаят кылсам эмне болот?","3 шикаят алган жарыя бардыгынан жашырылат, модератор карап чыгат."],
+  ["Сайтты телефонго колдонмо кылып орнотсо болобу?","Ооба. Браузердин ⋮ менюсунан «Башкы экранга кошуу» басыңыз."]];
+  setTab("help");
+  openSheet('<div class="shead"><h3>Жардам</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="faq">'+q.map(x=>'<details><summary>'+esc(x[0])+'</summary><p>'+esc(x[1])+'</p></details>').join("")+'</div>');
+}
+function openMe(){
+  const mine=S.ads.filter(a=>a.mine).length, fav=S.ads.filter(a=>isFav(a.id)).length;
+  setTab("me");
+  openSheet('<div class="shead"><h3>Кабинет</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="mlist">'
+   +'<button class="mrow" data-go="mine"><span class="mi">📋</span><span>Менин жарыяларым<small>'+mine+' жарыя</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="post"><span class="mi">📢</span><span>Жарыя берүү<small>Бекер, аккаунтсуз</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="fav"><span class="mi">❤️</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="help"><span class="mi">❓</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
+   +(S.admin?'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
+   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'
+   +'</div>');
+}
+$("home").onclick=()=>goTab("home");
 $("sform").addEventListener("submit",e=>e.preventDefault());
 $("q").addEventListener("input",e=>{S.q=e.target.value;renderFeed()});
 $("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderFeed()});
