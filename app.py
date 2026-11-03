@@ -33,7 +33,7 @@ MAX_POSTS_PER_IP_HOUR = 6  # бир IPден саатына
 AD_LIFETIME_DAYS = 60      # жарыя ушунча күндөн кийин тизмеден чыгат
 
 CATS = {
-    "job", "house", "law", "fin", "cargo", "ride", "ticket", "med",
+    "job", "jobseek", "carsale", "house", "law", "fin", "cargo", "ride", "ticket", "med",
     "beauty", "food", "edu", "auto", "help", "market",
 }
 
