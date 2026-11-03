@@ -4,7 +4,11 @@ FastAPI + PostgreSQL. Аккаунт жок: ар бир браузер өзүн
 токенин түзөт, жарыянын ээси ошол токен менен аныкталат (базада анын
 хэши гана сакталат). Админ ADMIN_TOKEN аркылуу баарын өчүрө алат.
 """
+import asyncio
 import hashlib
+import re
+import time
+import urllib.request
 import os
 import secrets
 from contextlib import asynccontextmanager
@@ -58,6 +62,12 @@ CREATE TABLE IF NOT EXISTS ads (
 );
 CREATE INDEX IF NOT EXISTS ads_created_idx ON ads (created_at DESC);
 CREATE INDEX IF NOT EXISTS ads_owner_idx ON ads (owner_hash);
+CREATE TABLE IF NOT EXISTS fx_daily (
+    day  TEXT NOT NULL,
+    cur  TEXT NOT NULL,
+    val  DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (day, cur)
+);
 CREATE TABLE IF NOT EXISTS reports (
     ad_id    TEXT NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
     ip_hash  TEXT NOT NULL,
@@ -160,6 +170,60 @@ def to_json(row: dict, owner_hash: str | None, admin: bool) -> dict:
         out["reports"] = row["reports"]
         out["hidden"] = row["hidden"]
     return out
+
+
+# ── Валюта курсу: КР Улуттук банкы (nbkr.kg), 6 саатта бир жаңырат ──
+FX_URL = "https://www.nbkr.kg/XML/daily.xml"
+FX_CUR = ("USD", "EUR", "RUB", "KZT", "CNY")
+_fx = {"rates": {}, "day": "", "t": 0.0, "try": 0.0}
+_fx_lock = asyncio.Lock()
+
+
+def _fx_download():
+    req = urllib.request.Request(FX_URL, headers={"User-Agent": "Mozilla/5.0 (BIZBIRGEBIZ)"})
+    x = urllib.request.urlopen(req, timeout=8).read().decode("utf-8", "ignore")
+    dm = re.search(r'Date="(\d\d)\.(\d\d)\.(\d{4})"', x)
+    day = f"{dm.group(3)}-{dm.group(2)}-{dm.group(1)}" if dm else time.strftime("%Y-%m-%d")
+    got = {}
+    for c in FX_CUR:
+        m = re.search(r'ISOCode="%s"\s*>\s*<Nominal>\s*(\d+)\s*</Nominal>\s*<Value>\s*([\d.,]+)\s*</Value>' % c, x)
+        if m:
+            got[c] = float(m.group(2).replace(",", ".")) / max(1, int(m.group(1)))
+    return day, got
+
+
+async def fx_rates():
+    now = time.time()
+    if _fx["rates"] and now - _fx["t"] < 6 * 3600:
+        return _fx
+    async with _fx_lock:
+        if (_fx["rates"] and time.time() - _fx["t"] < 6 * 3600) or time.time() - _fx["try"] < 600:
+            return _fx
+        _fx["try"] = time.time()
+        try:
+            day, got = await asyncio.to_thread(_fx_download)
+            if got.get("USD"):
+                prev = {}
+                if pool is not None:
+                    async with pool.connection() as conn:
+                        for k, v in got.items():
+                            await conn.execute("INSERT INTO fx_daily (day, cur, val) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING", (day, k, v))
+                        cur = await conn.execute(
+                            "SELECT DISTINCT ON (cur) cur, val FROM fx_daily WHERE day < %s ORDER BY cur, day DESC", (day,))
+                        prev = {row["cur"]: row["val"] for row in await cur.fetchall()}
+                _fx.update(day=day, t=time.time(), rates={
+                    k: {"v": round(v, 4), "d": round(v - prev[k], 4) if k in prev else None} for k, v in got.items()})
+        except Exception as e:
+            print("fx:", e, flush=True)
+    return _fx
+
+
+@app.get("/api/rates")
+async def rates():
+    fx = await fx_rates()
+    if not fx["rates"]:
+        raise HTTPException(503, "Курс азыр жеткиликсиз.")
+    return {"day": fx["day"], "rates": fx["rates"], "source": "КР Улуттук банкы"}
 
 
 @app.get("/healthz")

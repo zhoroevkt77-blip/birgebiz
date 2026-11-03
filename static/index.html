@@ -50,6 +50,19 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .smartbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px;padding:10px 12px;background:var(--surface);border:2px solid var(--fg);border-radius:14px}
 .sb-l{font-weight:900;letter-spacing:-.2px}
 .sb-c{background:var(--sun);color:#000;font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px}
+.fxbar{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;background:var(--surface);border:2px solid var(--fg);border-radius:999px;padding:9px 16px;font-weight:900;font-size:16px;letter-spacing:-.3px;font-variant-numeric:tabular-nums;color:var(--fg);text-align:left}
+.fxbar .fx-i{flex:none;width:26px;height:26px;border-radius:8px;background:var(--red);color:var(--sun);display:grid;place-items:center;font-size:14px}
+.fxbar .fx-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .fx-v i{font-style:normal;color:var(--muted);font-weight:500;padding:0 4px}
+.fxbar .fx-m{flex:none;color:var(--red);font-weight:800;font-size:14px}
+.fxrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-variant-numeric:tabular-nums}
+.fxrow .sym{width:44px;height:44px;border-radius:12px;background:var(--red);color:var(--sun);display:grid;place-items:center;font-weight:900;font-size:20px}
+.fxrow b{display:block;font-size:17px;font-weight:900;letter-spacing:-.3px}
+.fxrow small{color:var(--muted);font-size:13px}
+.fxrow .val{text-align:right;font-weight:900;font-size:18px}
+.up{color:#1f7a4c;font-size:12px;font-weight:700}.dn{color:var(--red);font-size:12px;font-weight:700}
+.conv{background:var(--surface);border:2px solid var(--fg);border-radius:16px;padding:14px;display:grid;gap:10px}
+.conv .res{font-size:26px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .sb-x{margin-left:auto;border:0;background:none;font-weight:800;color:var(--red);padding:4px 2px}
 .search input:focus{outline:none}
 .search:focus-within{outline:3px solid var(--sun)}
@@ -194,6 +207,7 @@ footer p{margin:0 0 8px;max-width:70ch}
 </header>
 
 <main class="wrap">
+  <button class="fxbar" id="fxBar" hidden></button>
   <div class="smartbar" id="smartBar" hidden></div>
   <nav class="cities" id="cities" aria-label="Шаарлар"></nav>
   <label class="f areaf" id="areaWrap" hidden>Район / метро
@@ -549,6 +563,33 @@ function goTab(name){
   if(name==="help"){openHelp();return}
   if(name==="me"){openMe();return}
 }
+const FXN={USD:["$","АКШ доллары"],EUR:["€","Евро"],RUB:["₽","Орус рубли"],KZT:["₸","Казак теңгеси"],CNY:["¥","Кытай юаны"]};
+let FX=null;
+const f2=(v,d)=>new Intl.NumberFormat("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+async function loadFx(){try{FX=await api("/api/rates");renderFx()}catch(e){FX=null;$("fxBar").hidden=true}}
+function renderFx(){
+  const b=$("fxBar");if(!FX||!FX.rates.USD){b.hidden=true;return}
+  const R=FX.rates,part=(k,d)=>R[k]?FXN[k][0]+" "+f2(R[k].v,d):"";
+  b.innerHTML='<span class="fx-i" aria-hidden="true">₽</span><span class="fx-v">'+[part("USD",2),part("EUR",2),part("RUB",2)].filter(Boolean).join('<i>·</i>')+'</span><span class="fx-m">Курс ›</span>';
+  b.setAttribute("aria-label","Валюта курсу");b.hidden=false;
+}
+function openFx(){
+  if(!FX)return;
+  const R=FX.rates,d=FX.day.split("-").reverse().join(".");
+  const rows=Object.keys(FXN).filter(k=>R[k]).map(k=>{const x=R[k],dg=k==="KZT"?4:2;
+    const ch=x.d==null||Math.abs(x.d)<0.00005?'':(x.d>0?'<span class="up">▲ '+f2(x.d,dg)+'</span>':'<span class="dn">▼ '+f2(-x.d,dg)+'</span>');
+    return '<div class="fxrow"><span class="sym">'+FXN[k][0]+'</span><span><b>'+FXN[k][1]+'</b><small>1 '+k+'</small></span><span class="val">'+f2(x.v,dg)+' сом<br>'+ch+'</span></div>'}).join("");
+  openSheet('<div class="shead"><div><div class="status">КР Улуттук банкы · '+esc(d)+'</div><h3>Валюта курсу</h3></div><button class="x" data-close aria-label="Жабуу">✕</button></div>'
+   +'<div class="conv"><label class="f">Канча которосуз?<input id="cvA" inputmode="decimal" value="10000"></label>'
+   +'<div class="row2"><label class="f">Валюта<select id="cvC">'+Object.keys(FXN).filter(k=>R[k]).map(k=>'<option value="'+k+'"'+(k==="RUB"?" selected":"")+'>'+FXN[k][0]+' '+FXN[k][1]+'</option>').join("")+'</select></label>'
+   +'<label class="f">Багыты<select id="cvD"><option value="to">→ сомго</option><option value="from">сомдон →</option></select></label></div>'
+   +'<div class="res" id="cvR"></div></div>'
+   +'<div class="mlist" style="margin-top:12px">'+rows+'</div>'
+   +'<div class="note warn">Бул расмий курс. Банктардын жана акча которуу сервистеринин курсу бир аз башкача болушу мүмкүн.</div>');
+  const calc=()=>{const a=parseFloat(($("cvA").value||"0").replace(/\s/g,"").replace(",","."))||0,k=$("cvC").value,v=R[k].v,to=$("cvD").value==="to";
+    $("cvR").textContent=to?f2(a,0)+" "+FXN[k][0]+" = "+f2(a*v,2)+" сом":f2(a,0)+" сом = "+f2(a/v,2)+" "+FXN[k][0]};
+  ["cvA","cvC","cvD"].forEach(id=>$(id).addEventListener("input",calc));calc();
+}
 function openHelp(){
   const q=[["Жарыяны кантип берем?","Ылдыйдагы кызыл «+» баскычын басыңыз, категорияны, шаарды жана байланышты жазыңыз. Жарыя ошол замат чыгат. Бекер."],
   ["Жарыямды кантип өчүрөм?","Кабинет → Менин жарыяларым. Жарыяны ачып, «Жарыяны өчүрүү» басыңыз. Жарыяны кайсы телефондон берсеңиз, ошол телефондон гана өчүрө аласыз."],
@@ -573,6 +614,7 @@ function openMe(){
    +'</div>');
 }
 $("home").onclick=()=>goTab("home");
+$("fxBar").onclick=openFx;
 $("sform").addEventListener("submit",e=>{e.preventDefault();$("q").blur();runSmart($("q").value)});
 $("q").addEventListener("input",e=>{if(!e.target.value.trim()&&S.smart)runSmart("")});
 const EX=["Койка-место Люблино 8 миң","Патент Москва","Посылка Бишкекке","Склад жумуш күнүнө","Стоматолог Казань","Суткалык батир Питер","Айфон 30 миң Екб"];
@@ -587,6 +629,7 @@ async function load(){
   S.ready=true;render();
 }
 load();
+loadFx();setInterval(loadFx,30*60000);
 setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 if("serviceWorker" in navigator){
