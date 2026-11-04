@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ky">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Админ · БИЗ БИРГЕБИЗ!</title>
+<meta name="theme-color" content="#0b6fb8">
+<link rel="icon" href="/static/icon.svg?v=2" type="image/svg+xml">
+<style>
+/* Админ панель: баш тилке → өтмөктөр (чиптер) → бөлүм. Негизги сайттын токендери. */
+:root{
+  --bg:#f2f6fa; --surface:#ffffff; --sunk:#e3ebf3; --fg:#000000; --muted:#4a5866; --line:#d3deea;
+  --pri:#0b6fb8; --pri-ink:#ffffff; --sun:#ffc928; --sun-ink:#3a2a00; --good:#1f7a4c; --warn:#a15c00; --danger:#c8102e;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1621; --surface:#16212e; --sunk:#1e2b3a; --fg:#eef3f8; --muted:#9fb1c3; --line:#2a3a4c;
+  --pri:#3d9be3; --pri-ink:#ffffff; --sun:#ffd04a; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; --danger:#ff5a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1621; --surface:#16212e; --sunk:#1e2b3a; --fg:#eef3f8; --muted:#9fb1c3; --line:#2a3a4c;
+  --pri:#3d9be3; --pri-ink:#ffffff; --sun:#ffd04a; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; --danger:#ff5a6e; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* баш тилке */
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:14px 0}
+.hrow{display:flex;align-items:center;gap:10px}
+.lg{width:46px;height:46px;border-radius:12px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);flex:none}
+.brand{font-weight:900;font-size:20px;letter-spacing:-.5px;white-space:nowrap}
+.brand em{font-style:normal;color:var(--pri)}
+.badge{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:3px 9px}
+.sp{flex:1}
+.ghost{border:0;background:var(--sunk);color:var(--muted);font-weight:700;border-radius:999px;padding:9px 16px;font-size:15px;text-decoration:none;white-space:nowrap}
+@media (max-width:440px){.brand{font-size:17px}.hrow .site{display:none}}
+.tabs{display:flex;gap:10px;overflow-x:auto;padding-block:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:11px 20px;font-weight:800;font-size:16px;display:flex;gap:7px;align-items:center}
+.tab[aria-current="page"]{background:var(--sun);border-color:var(--sun);color:var(--sun-ink);box-shadow:0 6px 16px rgba(255,201,40,.35)}
+.tab .n{background:var(--danger);color:#fff;border-radius:999px;font-size:12px;min-width:20px;padding:1px 6px;text-align:center}
+
+h1{font-size:30px;font-weight:900;letter-spacing:-.8px;margin:8px 0 16px}
+h2{font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:28px 0 10px}
+main{padding-bottom:48px}
+
+/* статистика плиткалары */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:720px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{background:var(--surface);border:0;border-radius:20px;padding:16px 18px;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+button.tile:hover{outline:2px solid var(--line)}
+.tile .l{color:var(--muted);font-weight:700;font-size:15px}
+.tile .v{font-weight:900;font-size:36px;letter-spacing:-1px;line-height:1.15;font-variant-numeric:tabular-nums;margin-top:4px}
+.tile .v small{font-size:16px;font-weight:700;color:var(--muted);letter-spacing:0}
+.tile.alert .v{color:var(--danger)}
+.list{background:var(--surface);border-radius:20px;overflow:hidden}
+.li{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;font-size:16px}
+.li:last-child{border-bottom:0}
+.li .t{flex:1;min-width:0}
+.li b.c{font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--sunk);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri);border-radius:3px}
+
+/* фильтрлер */
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools input[type=search],.tools select{flex:1 1 200px;min-width:0;border:2px solid var(--fg);border-radius:14px;padding:11px 14px;background:var(--surface);font-size:16px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* жарыя карточкалары */
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--surface);border-radius:18px;padding:14px 16px;display:flex;gap:12px}
+.card .th{width:72px;height:72px;border-radius:12px;object-fit:cover;flex:none;background:var(--sunk)}
+.card .b{flex:1;min-width:0}
+.meta{font-size:13px;color:var(--muted);display:flex;gap:6px 10px;flex-wrap:wrap}
+.ttl{font-weight:800;font-size:17px;margin:2px 0;overflow-wrap:anywhere}
+.txt{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tg{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--sunk);color:var(--muted)}
+.tg.red{background:var(--danger);color:#fff}.tg.y{background:var(--sun);color:var(--sun-ink)}.tg.g{background:var(--good);color:#fff}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font-weight:700;font-size:14px}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.btn.ok{background:var(--good);border-color:var(--good);color:#fff}
+.btn.bad{color:var(--danger);border-color:var(--danger)}
+.btn.sure{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn:disabled{opacity:.5}
+.empty{background:var(--surface);border-radius:18px;padding:28px 18px;text-align:center;color:var(--muted)}
+.rc{display:block;max-height:340px;border-radius:12px;margin-top:10px;border:1px solid var(--line)}
+
+/* формалар */
+.form{background:var(--surface);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
+.in{border:2px solid var(--fg);border-radius:14px;padding:12px 14px;background:var(--surface);font-size:16px;width:100%}
+textarea.in{min-height:110px;resize:vertical}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.go{border:0;background:var(--pri);color:var(--pri-ink);border-radius:14px;padding:14px;font-weight:800;font-size:16px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.err{color:var(--danger);font-weight:700;font-size:14px;min-height:1em}
+.nb{border-radius:14px;padding:12px 14px;font-weight:600;border-left:5px solid var(--pri);background:var(--sunk)}
+.nb.warn{border-left-color:var(--warn)}.nb.good{border-left-color:var(--good)}
+
+/* кирүү */
+.login{min-height:80vh;display:flex;align-items:center;justify-content:center;padding-block:24px}
+.login .box{width:100%;max-width:400px;background:var(--surface);border-radius:24px;padding:28px 22px;display:flex;flex-direction:column;gap:14px;text-align:center}
+.login .lg{width:96px;height:96px;margin:0 auto;border-radius:22px}
+.login h1{margin:0;font-size:24px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:20;max-width:90vw;text-align:center}
+.more{display:block;margin:14px auto 0}
+</style>
+</head>
+<body>
+
+<div id="login" class="wrap login" hidden>
+  <form class="box" id="lform">
+    <img class="lg" src="/static/logo.png?v=1" alt="">
+    <h1>Админ панель</h1>
+    <p class="hint">Railway → web → Variables → <b>ADMIN_TOKEN</b> маанисин жазыңыз.</p>
+    <input class="in" id="tok" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="ADMIN_TOKEN" aria-label="Админ токени">
+    <div class="err" id="lerr"></div>
+    <button class="go" type="submit" id="lgo">Кирүү</button>
+    <a class="hint" href="/">← Сайтка кайтуу</a>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="top">
+    <div class="wrap">
+      <div class="hrow">
+        <img class="lg" src="/static/logo.png?v=1" alt="">
+        <span class="brand">БИЗ <em>БИРГЕБИЗ!</em></span>
+        <span class="badge">Админ</span>
+        <span class="sp"></span>
+        <a class="ghost site" href="/">Сайт</a>
+        <button class="ghost" id="out">Чыгуу</button>
+      </div>
+      <nav class="tabs" id="tabs" aria-label="Админ бөлүмдөрү"></nav>
+    </div>
+  </div>
+  <main class="wrap" id="main"></main>
+</div>
+
+<script>
+const CATNM={"job":"Жумуш берүү","jobseek":"Жумуш издөө","carsale":"Автоунаа","house":"Туракжай ижара","law":"Юридикалык кызмат","cargo":"Посылка / жүк","ride":"Жүргүнчү ташуу","ticket":"Авиакасса","med":"Медицина","beauty":"Сулуулук","food":"Тамак-аш, кафе","edu":"Билим жана курстар","auto":"Авто кызмат","help":"Кайрымдуулук","market":"Барахолка","repair":"Оңдоо, мастер"};
+const CATIC={job:"💼",jobseek:"🔎",carsale:"🚗",house:"🏠",law:"⚖️",cargo:"📦",ride:"🚐",ticket:"✈️",med:"🩺",beauty:"💄",food:"🍔",edu:"🎓",auto:"🔧",help:"❤️",market:"🧸",repair:"🛠"};
+const TABS=[["stats","Статистика"],["ads","Жарыялар"],["mod","Модерация"],["users","Колдонуучулар"],["fx","Курс"],["notice","Билдирүү"]];
+const AF=[["all","Баары"],["active","Активдүү"],["today","Бүгүн"],["expired","Мөөнөтү бүткөн"],["photos","📷 Сүрөтү бар"],["hidden","⚠️ Шектүү"],["pending","⏳ Төлөм"],["rejected","Четке кагылган"],["blocked","⛔ Бөгөттөлгөн"]];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Number(n||0).toLocaleString("ru-RU");
+const dt=ms=>{const d=new Date(ms),p=x=>String(x).padStart(2,"0");return p(d.getDate())+"."+p(d.getMonth()+1)+"."+String(d.getFullYear()).slice(2)+" "+p(d.getHours())+":"+p(d.getMinutes())};
+const ago=ms=>{const m=Math.round((Date.now()-ms)/6e4);if(m<1)return"азыр";if(m<60)return m+" мүн мурун";const h=Math.round(m/60);if(h<24)return h+" саат мурун";const d=Math.round(h/24);return d<31?d+" күн мурун":dt(ms)};
+const S={tok:"",tab:"stats",af:"all",q:"",cat:"",key:"",uq:"",ub:false,counts:{}};
+try{S.tok=localStorage.getItem("bb_admin")||""}catch(e){}
+try{S.tab=localStorage.getItem("bb_admtab")||"stats"}catch(e){}
+if(!TABS.some(t=>t[0]===S.tab))S.tab="stats";
+
+async function api(path,opts={}){
+  const hd={"X-Admin-Token":S.tok};if(opts.body)hd["Content-Type"]="application/json";
+  const r=await fetch(path,Object.assign({},opts,{headers:hd}));let j={};try{j=await r.json()}catch(e){}
+  if(r.status===403){logout(true);throw{message:"Токен туура эмес"}}
+  if(!r.ok)throw{message:j.error||("Сервер ката берди ("+r.status+")")};return j}
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
+
+/* ── кирүү / чыгуу ── */
+function showLogin(msg){$("app").hidden=true;$("login").hidden=false;$("lerr").textContent=msg||"";setTimeout(()=>$("tok").focus(),50)}
+function logout(bad){S.tok="";try{localStorage.removeItem("bb_admin")}catch(e){}showLogin(bad?"Токен туура эмес же өзгөртүлгөн. Кайра жазыңыз.":"")}
+$("lform").addEventListener("submit",async e=>{
+  e.preventDefault();const t=$("tok").value.trim();if(!t){$("lerr").textContent="Токенди жазыңыз.";return}
+  $("lgo").disabled=true;$("lgo").textContent="Текшерилүүдө…";
+  try{const r=await fetch("/api/admin/stats",{headers:{"X-Admin-Token":t}});
+    if(r.ok){S.tok=t;try{localStorage.setItem("bb_admin",t)}catch(x){}$("tok").value="";start()}
+    else $("lerr").textContent=r.status===403?"Токен туура эмес. Railway'деги ADMIN_TOKEN менен так салыштырыңыз.":"Сервер ката берди ("+r.status+")"}
+  catch(x){$("lerr").textContent="Байланыш жок. Интернетти текшериңиз."}
+  $("lgo").disabled=false;$("lgo").textContent="Кирүү";
+});
+$("out").addEventListener("click",()=>{logout(false);toast("Админден чыктыңыз")});
+
+/* ── өтмөктөр ── */
+function renderTabs(){
+  $("tabs").innerHTML=TABS.map(([k,n])=>{const c=k==="mod"?(S.counts.hidden||0)+(S.counts.pending||0):0;
+    return '<button class="tab" data-tab="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+n+(c?'<span class="n">'+c+'</span>':'')+'</button>'}).join("");
+  const a=$("tabs").querySelector('[aria-current]');if(a)a.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)go(b.dataset.tab)});
+function go(tab,o){S.tab=tab;Object.assign(S,o||{});try{localStorage.setItem("bb_admtab",tab)}catch(e){}renderTabs();scrollTo({top:0});VIEWS[tab]()}
+function loading(){$("main").innerHTML='<p class="hint" style="padding:24px 0">Жүктөлүүдө…</p>'}
+function fail(x){$("main").innerHTML='<div class="empty">⚠️ '+esc(x.message||"Ката")+'<br><button class="btn more" onclick="VIEWS[S.tab]()">Кайра аракет</button></div>'}
+
+/* ── Статистика ── */
+async function vStats(){
+  loading();let s;try{s=await api("/api/admin/stats")}catch(x){return fail(x)}
+  S.counts={hidden:s.hidden,pending:s.pending};renderTabs();
+  const T=(l,v,go,cls)=>(go?'<button class="tile'+(cls?' '+cls:'')+'" data-go="'+go+'">':'<div class="tile'+(cls?' '+cls:'')+'">')+'<div class="l">'+l+'</div><div class="v">'+v+'</div>'+(go?'</button>':'</div>');
+  const mx=Math.max(1,...s.by_cat.map(x=>x.n)),mc=Math.max(1,...s.by_city.map(x=>x.n));
+  $("main").innerHTML='<h1>Статистика</h1><div class="tiles">'
+   +T("Жалпы жарыя",fmt(s.total),"ads:all")+T("Активдүү",fmt(s.active),"ads:active")
+   +T("Бүгүн коюлду",fmt(s.today),"ads:today")+T("Мөөнөтү бүткөн",fmt(s.expired),"ads:expired")
+   +T("⚠️ Шектүү",fmt(s.hidden),"mod",s.hidden?"alert":"")+T("Жалпы көрүү",fmt(s.views))
+   +T("Колдонуучулар",fmt(s.users),"users")+T("Бүгүн кошулду",fmt(s.users_today),"users")
+   +T("📷 Сүрөтү бар",fmt(s.photos),"ads:photos")+T("⛔ Бөгөттөлгөн",fmt(s.blocked),"users:blocked")
+   +T("⏳ Төлөм күтүүдө",fmt(s.pending),"mod",s.pending?"alert":"")+T("💰 Киреше",fmt(s.earned)+' <small>₽</small>')
+   +'</div>'
+   +'<p class="hint" style="margin-top:10px">Акы алуу: '+(s.pay_enabled?'<b>күйүк</b>':'<b>өчүк</b> (PAY_INFO коюлган эмес — баары бекер)')+' · Бекер лимит: '+s.free_limit+' жарыя</p>'
+   +'<h2>Категориялар (активдүү)</h2><div class="list">'+(s.by_cat.length?s.by_cat.map(x=>'<button class="li" data-go="ads:active:'+esc(x.cat)+'"><span>'+(CATIC[x.cat]||"•")+'</span><span class="t">'+esc(CATNM[x.cat]||x.cat)+'<div class="bar"><i style="width:'+(x.n/mx*100)+'%"></i></div></span><b class="c">'+x.n+'</b></button>').join(""):'<div class="li">Азырынча жарыя жок</div>')+'</div>'
+   +'<h2>Шаарлар (активдүү)</h2><div class="list">'+(s.by_city.length?s.by_city.map(x=>'<div class="li"><span>📍</span><span class="t">'+esc(x.city)+'<div class="bar"><i style="width:'+(x.n/mc*100)+'%"></i></div></span><b class="c">'+x.n+'</b></div>').join(""):'<div class="li">Азырынча жарыя жок</div>')+'</div>';
+}
+$("main").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;
+  const [t,f,c]=b.dataset.go.split(":");
+  if(t==="ads")go("ads",{af:f||"all",cat:c||"",q:"",key:""});
+  else if(t==="users")go("users",{ub:f==="blocked",uq:""});
+  else go(t);
+});
+
+/* ── Жарыялар ── */
+function adCard(a,mode){
+  const st=[];if(a.status==="pending")st.push('<span class="tg y">⏳ Төлөм</span>');if(a.status==="rejected")st.push('<span class="tg red">Четке кагылган</span>');
+  if(a.hidden)st.push('<span class="tg red">Шектүү · '+(a.reports||0)+'</span>');if(a.expired)st.push('<span class="tg">Мөөнөтү бүткөн</span>');
+  if(a.blocked)st.push('<span class="tg red">⛔ Бөгөттөлгөн</span>');if(a.fee)st.push('<span class="tg g">'+a.fee+' ₽</span>');if(a.forKg)st.push('<span class="tg">Мекендештерге</span>');
+  const ct=[a.phone,a.wa&&("WA "+a.wa),a.tg&&("TG "+a.tg)].filter(Boolean).join(" · ");
+  let acts='';
+  if(mode==="pay")acts+='<button class="btn ok" data-act="approve" data-id="'+esc(a.id)+'">✅ Тастыктоо</button><button class="btn bad" data-act="reject" data-id="'+esc(a.id)+'">Четке кагуу</button>';
+  if(a.hidden)acts+='<button class="btn ok" data-act="unhide" data-id="'+esc(a.id)+'">Кайра ачуу</button>';
+  acts+='<button class="btn bad" data-act="del" data-id="'+esc(a.id)+'">🗑 Өчүрүү</button>';
+  if(a.key&&mode!=="user")acts+='<button class="btn" data-act="user" data-key="'+esc(a.key)+'">👤 Ээси</button>';
+  return '<div class="card" id="c_'+esc(a.id)+'">'+(a.thumb?'<img class="th" src="/api/ads/'+encodeURIComponent(a.id)+'/thumb" alt="" loading="lazy">':'')
+   +'<div class="b"><div class="meta"><span>'+(CATIC[a.cat]||"")+' '+esc(CATNM[a.cat]||a.cat)+' · '+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></div>'
+   +'<div class="ttl">'+esc(a.title)+'</div><div class="txt">'+esc(a.text)+'</div>'
+   +'<div class="meta" style="margin-top:6px"><span>📍 '+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span>'+(a.price!=null?'<span>💵 '+fmt(a.price)+' '+(a.cur==="KGS"?"сом":"₽")+(a.per?" "+esc(a.per):"")+'</span>':'')+'<span>👁 '+fmt(a.views)+'</span>'+(a.photos?'<span>📷 '+a.photos+'</span>':'')+'</div>'
+   +'<div class="meta">'+(a.name?'<span>👤 '+esc(a.name)+'</span>':'')+(ct?'<span>☎ '+esc(ct)+'</span>':'')+'</div>'
+   +(st.length?'<div class="tags">'+st.join("")+'</div>':'')
+   +(a.receipt?'<a href="'+a.receipt+'" target="_blank" rel="noopener"><img class="rc" src="'+a.receipt+'" alt="Чек"></a>':'')
+   +'<div class="acts">'+acts+'</div></div></div>';
+}
+let qT=0;
+async function vAds(){
+  const fresh=!$("aq");
+  if(fresh)$("main").innerHTML='<h1>Жарыялар</h1><div class="tools"><input type="search" id="aq" placeholder="Аталышы, телефон, шаар, ID…" enterkeyhint="search"><select id="acat"><option value="">Бардык категориялар</option>'+Object.entries(CATNM).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join("")+'</select></div><div class="chips" id="achips"></div><div id="akey"></div><div class="cards" id="alist"></div>';
+  $("aq").value=S.q;$("acat").value=S.cat;
+  $("achips").innerHTML=AF.map(([k,n])=>'<button class="chip" data-af="'+k+'" aria-pressed="'+(S.af===k)+'">'+n+'</button>').join("");
+  $("akey").innerHTML=S.key?'<p class="nb" style="margin:0 0 12px">Бир колдонуучунун жарыялары: <b>'+esc(S.key)+'</b> <button class="btn" data-clrkey style="margin-left:6px">✕ Баарын көрсөтүү</button></p>':'';
+  $("alist").innerHTML='<p class="hint">Жүктөлүүдө…</p>';
+  try{const j=await api("/api/admin/ads?"+new URLSearchParams({f:S.af,q:S.q,cat:S.cat,key:S.key}));
+    $("alist").innerHTML=j.items.length?'<p class="hint">'+j.items.length+(j.items.length>=300?'+':'')+' жарыя</p>'+j.items.map(a=>adCard(a)).join(""):'<div class="empty">Бул фильтр боюнча жарыя жок</div>'}
+  catch(x){$("alist").innerHTML='<div class="empty">⚠️ '+esc(x.message)+'</div>'}
+}
+document.addEventListener("input",e=>{if(e.target.id==="aq"){clearTimeout(qT);qT=setTimeout(()=>{S.q=e.target.value.trim();vAds()},350)}
+  if(e.target.id==="uq"){clearTimeout(qT);qT=setTimeout(()=>{S.uq=e.target.value.trim();vUsers()},350)}});
+document.addEventListener("change",e=>{if(e.target.id==="acat"){S.cat=e.target.value;vAds()}});
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-af]");if(c){S.af=c.dataset.af;vAds();return}
+  if(e.target.closest("[data-clrkey]")){S.key="";vAds();return}
+  const u=e.target.closest("[data-ub]");if(u){S.ub=u.dataset.ub==="1";vUsers();return}
+});
+
+/* ── аракеттер (эки баскыч менен ырастоо) ── */
+function armed(b,label){if(b.dataset.armed){return true}b.dataset.armed="1";const old=b.textContent;b.textContent=label;b.classList.add("sure");
+  setTimeout(()=>{if(b.isConnected&&b.dataset.armed){delete b.dataset.armed;b.textContent=old;b.classList.remove("sure")}},3500);return false}
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;const id=b.dataset.id,act=b.dataset.act;
+  if(act==="user"){go("users",{uq:b.dataset.key,ub:false});return}
+  if(act==="ads"){go("ads",{key:b.dataset.key,af:"all",q:"",cat:""});return}
+  if(act==="del"&&!armed(b,"Ырастоо: өчүрөм"))return;
+  if(act==="reject"&&!armed(b,"Ырастоо: четке кагам"))return;
+  if(act==="block"&&!armed(b,"Ырастоо: бөгөттөйм"))return;
+  b.disabled=true;
+  try{
+    if(act==="del"){await api("/api/ads/"+encodeURIComponent(id),{method:"DELETE"});toast("Жарыя өчүрүлдү");rm(id)}
+    else if(act==="unhide"){await api("/api/ads/"+encodeURIComponent(id)+"/unhide",{method:"POST"});toast("Жарыя кайра ачылды");rm(id)}
+    else if(act==="approve"){await api("/api/ads/"+encodeURIComponent(id)+"/approve",{method:"POST"});toast("✅ Тастыкталды, жарыя чыкты");rm(id)}
+    else if(act==="reject"){await api("/api/ads/"+encodeURIComponent(id)+"/reject",{method:"POST"});toast("Четке кагылды");rm(id)}
+    else if(act==="block"){const r=($("rs_"+b.dataset.n)||{}).value||"";await api("/api/admin/block",{method:"POST",body:JSON.stringify({key:b.dataset.key,reason:r})});toast("⛔ Бөгөттөлдү: жарыялары жашырылды");vUsers()}
+    else if(act==="unblock"){await api("/api/admin/block/"+encodeURIComponent(b.dataset.key),{method:"DELETE"});toast("Бөгөттөн чыгарылды");vUsers()}
+  }catch(x){toast(x.message);b.disabled=false}
+});
+function rm(id){if(S.tab==="mod"){vMod();return}const c=$("c_"+id);if(c)c.remove()}
+async function refreshCounts(){try{const s=await api("/api/admin/stats");S.counts={hidden:s.hidden,pending:s.pending};renderTabs()}catch(x){}}
+
+/* ── Модерация ── */
+async function vMod(){
+  loading();let h,p;
+  try{[h,p]=await Promise.all([api("/api/admin/ads?f=hidden"),api("/api/admin/pending")])}catch(x){return fail(x)}
+  S.counts={hidden:h.items.length,pending:p.items.length};renderTabs();
+  $("main").innerHTML='<h1>Модерация</h1>'
+   +'<h2>⏳ Төлөмдү текшерүү ('+p.items.length+')</h2><div class="cards">'+(p.items.length?p.items.map(a=>adCard(a,"pay")).join(""):'<div class="empty">Текшерилүүчү төлөм жок</div>')+'</div>'
+   +'<h2>⚠️ Шектүү деп жашырылгандар ('+h.items.length+')</h2><p class="hint" style="margin:-4px 0 10px">3 адам «Шектүү» деп кабарлаганда жарыя өзү жашырылат. Карап чыгып, кайра ачыңыз же өчүрүңүз.</p><div class="cards">'+(h.items.length?h.items.map(a=>adCard(a)).join(""):'<div class="empty">Шектүү жарыя жок 👍</div>')+'</div>';
+}
+
+/* ── Колдонуучулар ── */
+async function vUsers(){
+  if(!$("uq"))$("main").innerHTML='<h1>Колдонуучулар</h1><div class="tools"><input type="search" id="uq" placeholder="Аты, телефон, Telegram…" enterkeyhint="search"></div><div class="chips" id="uchips"></div><div class="cards" id="ulist"></div>';
+  $("uq").value=S.uq;
+  $("uchips").innerHTML='<button class="chip" data-ub="0" aria-pressed="'+!S.ub+'">Баары</button><button class="chip" data-ub="1" aria-pressed="'+S.ub+'">⛔ Бөгөттөлгөндөр</button>';
+  $("ulist").innerHTML='<p class="hint">Жүктөлүүдө…</p>';
+  let j;try{j=await api("/api/admin/users?"+new URLSearchParams({q:S.uq,blocked:S.ub?"true":"false"}))}catch(x){$("ulist").innerHTML='<div class="empty">⚠️ '+esc(x.message)+'</div>';return}
+  $("ulist").innerHTML=j.items.length?'<p class="hint">'+j.items.length+' колдонуучу · Колдонуучу телефон (же WhatsApp / Telegram) боюнча эсептелет</p>'+j.items.map((u,i)=>{
+    const ct=[u.phone,u.wa&&("WA "+u.wa),u.tg&&("TG "+u.tg)].filter(Boolean).join(" · ");
+    return '<div class="card"><div class="b"><div class="ttl">'+esc(u.name||"Аты жок")+(u.blocked?' <span class="tg red">⛔ Бөгөттөлгөн</span>':'')+'</div>'
+     +'<div class="meta"><span>☎ '+esc(ct||u.key)+'</span>'+(u.city?'<span>📍 '+esc(u.city)+'</span>':'')+'</div>'
+     +'<div class="meta" style="margin-top:4px"><span>📄 '+u.n+' жарыя ('+u.active+' активдүү)</span><span>👁 '+fmt(u.views)+'</span><span>🎁 Бекер: '+Math.min(u.used,j.free_limit)+'/'+j.free_limit+'</span>'+(u.reports?'<span>⚠️ '+u.reports+' кабар</span>':'')+'</div>'
+     +'<div class="meta"><span>Биринчи: '+dt(u.first)+'</span><span>Акыркы: '+ago(u.last)+'</span></div>'
+     +(u.blocked&&u.reason?'<div class="meta">Себеби: '+esc(u.reason)+'</div>':'')
+     +(!u.blocked?'<input class="in" id="rs_'+i+'" placeholder="Бөгөттөөнүн себеби (милдеттүү эмес)" style="margin-top:10px;padding:8px 12px;font-size:14px;border-width:1.5px">':'')
+     +'<div class="acts"><button class="btn" data-act="ads" data-key="'+esc(u.key)+'">📄 Жарыялары</button>'
+     +(u.blocked?'<button class="btn ok" data-act="unblock" data-key="'+esc(u.key)+'">Бөгөттөн чыгаруу</button>':'<button class="btn bad" data-act="block" data-n="'+i+'" data-key="'+esc(u.key)+'">⛔ Бөгөттөө</button>')
+     +'</div></div></div>'}).join(""):'<div class="empty">Колдонуучу табылган жок</div>';
+}
+
+/* ── Курс: которуу сервистери ── */
+let SVC=[];
+async function vFx(){
+  loading();try{SVC=(await api("/api/fxsvc")).items||[]}catch(x){return fail(x)}
+  $("main").innerHTML='<h1>Которуу сервистери</h1><p class="hint" style="margin:-6px 0 14px">Сайттагы «Курс» терезесинде салыштырылат. Курс: <b>1000 ₽ үчүн канча сом</b> берет.</p>'
+   +'<div class="cards">'+(SVC.length?SVC.map(s=>'<div class="card"><div class="b"><div class="ttl">'+esc(s.name)+'</div><div class="meta"><span>1000 ₽ = <b>'+fmt(Math.round(s.rate*1000))+' сом</b></span>'+(s.fee?'<span>Комиссия: '+esc(s.fee)+'</span>':'')+'<span>Жаңыртылды: '+ago(s.updated)+'</span></div>'+(s.note?'<div class="meta">'+esc(s.note)+'</div>':'')+(s.contact?'<div class="meta">☎ '+esc(s.contact)+'</div>':'')+'<div class="acts"><button class="btn" data-svc="'+esc(s.id)+'">✏️ Өзгөртүү</button><button class="btn bad" data-svcdel="'+esc(s.id)+'">🗑 Өчүрүү</button></div></div></div>').join(""):'<div class="empty">Азырынча сервис кошула элек</div>')+'</div>'
+   +'<h2 id="svch">Сервис кошуу</h2>'+svcForm({});
+}
+function svcForm(s){return '<form class="form" id="sform"><input type="hidden" id="sid" value="'+esc(s.id||"")+'">'
+  +'<label class="f">Аты<input class="in" id="sname" maxlength="40" value="'+esc(s.name||"")+'" placeholder="Мис: Золотая Корона"></label>'
+  +'<div class="row2"><label class="f">1000 ₽ үчүн канча сом<input class="in" id="srate" inputmode="decimal" value="'+(s.rate?Math.round(s.rate*1000*100)/100:"")+'" placeholder="1065"></label><label class="f">Комиссия<input class="in" id="sfee" maxlength="40" value="'+esc(s.fee||"")+'" placeholder="0%"></label></div>'
+  +'<label class="f">Кошумча<input class="in" id="snote" maxlength="120" value="'+esc(s.note||"")+'" placeholder="Мис: 10 мүнөттө жетет"></label>'
+  +'<div class="row2"><label class="f">Байланыш<input class="in" id="scont" maxlength="60" value="'+esc(s.contact||"")+'" placeholder="Сайт же телефон"></label><label class="f">Тизмедеги орду<input class="in" id="ssort" inputmode="numeric" value="'+(s.sort||0)+'"></label></div>'
+  +'<div class="err" id="serr"></div><button class="go" type="submit">'+(s.id?"Сактоо":"+ Кошуу")+'</button>'+(s.id?'<button class="btn" type="button" data-svcnew>Жокко чыгаруу</button>':'')+'</form>'}
+document.addEventListener("click",async e=>{
+  const ed=e.target.closest("[data-svc]");if(ed){const s=SVC.find(x=>x.id===ed.dataset.svc);$("sform").outerHTML=svcForm(s);$("svch").textContent="Өзгөртүү: "+s.name;$("svch").scrollIntoView({behavior:"smooth"});return}
+  if(e.target.closest("[data-svcnew]")){vFx();return}
+  const d=e.target.closest("[data-svcdel]");if(d){if(!armed(d,"Ырастоо: өчүрөм"))return;try{await api("/api/fxsvc/"+encodeURIComponent(d.dataset.svcdel),{method:"DELETE"});toast("Өчүрүлдү");vFx()}catch(x){toast(x.message)}}
+});
+document.addEventListener("submit",async e=>{
+  if(e.target.id==="sform"){e.preventDefault();
+    const rate=parseFloat(($("srate").value||"").replace(",",".").replace(/\s/g,""));
+    if(!$("sname").value.trim()){$("serr").textContent="Атын жазыңыз.";return}
+    if(!(rate>100&&rate<5000)){$("serr").textContent="1000 ₽ үчүн канча сом экенин жазыңыз (мис. 1065).";return}
+    try{await api("/api/fxsvc",{method:"POST",body:JSON.stringify({id:$("sid").value||null,name:$("sname").value.trim(),rate:rate/1000,fee:$("sfee").value.trim(),note:$("snote").value.trim(),contact:$("scont").value.trim(),sort:parseInt($("ssort").value)||0})});toast("Сакталды");vFx()}
+    catch(x){$("serr").textContent=x.message}}
+  if(e.target.id==="nform"){e.preventDefault();saveNotice($("ntext").value.trim())}
+});
+
+/* ── Билдирүү: сайттын башында бардыгына көрүнөт ── */
+async function vNotice(){
+  loading();let n;try{n=await (await fetch("/api/notice")).json()}catch(x){return fail({message:"Жүктөлгөн жок"})}
+  $("main").innerHTML='<h1>Билдирүү</h1><p class="hint" style="margin:-6px 0 14px">Бул текст сайттын башкы бетинде, издөөнүн астында бардык колдонуучуларга көрүнөт. Колдонуучу ✕ басып жаба алат; жаңы текст жазсаңыз, кайра чыгат.</p>'
+   +'<h2>Азыр</h2>'+(n.text?'<div class="nb '+esc(n.kind)+'">'+esc(n.text)+'</div>':'<div class="empty">Билдирүү жок</div>')
+   +'<h2>Жаңы билдирүү</h2><form class="form" id="nform"><label class="f">Текст<textarea class="in" id="ntext" maxlength="400" placeholder="Мис: 1-декабрдан тартып патенттин баасы өзгөрөт. Толук маалымат «Юридикалык кызмат» бөлүмүндө.">'+esc(n.text||"")+'</textarea></label>'
+   +'<label class="f">Түрү<select class="in" id="nkind"><option value="info">ℹ️ Маалымат (көк)</option><option value="warn">⚠️ Эскертүү (сары)</option><option value="good">✅ Жакшы кабар (жашыл)</option></select></label>'
+   +'<div class="nb" id="nprev" hidden></div><div class="err" id="nerr"></div><button class="go" type="submit">Жарыялоо</button>'+(n.text?'<button class="btn bad" type="button" id="nclr">Билдирүүнү алып салуу</button>':'')+'</form>';
+  $("nkind").value=n.kind||"info";
+  const pv=()=>{const t=$("ntext").value.trim();$("nprev").hidden=!t;$("nprev").className="nb "+$("nkind").value;$("nprev").textContent=t};
+  $("ntext").addEventListener("input",pv);$("nkind").addEventListener("change",pv);pv();
+  const c=$("nclr");if(c)c.addEventListener("click",()=>{if(armed(c,"Ырастоо: алып салам"))saveNotice("")});
+}
+async function saveNotice(text){
+  try{await api("/api/admin/notice",{method:"POST",body:JSON.stringify({text,kind:($("nkind")||{}).value||"info"})});toast(text?"✅ Билдирүү сайтка чыкты":"Билдирүү алынды");vNotice()}
+  catch(x){$("nerr").textContent=x.message}
+}
+
+const VIEWS={stats:vStats,ads:vAds,mod:vMod,users:vUsers,fx:vFx,notice:vNotice};
+function start(){$("login").hidden=true;$("app").hidden=false;renderTabs();VIEWS[S.tab]();if(S.tab!=="stats")refreshCounts()}
+if(S.tok)start();else showLogin();
+</script>
+</body>
+</html>

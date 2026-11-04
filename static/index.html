@@ -149,6 +149,10 @@ h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(
 .empty .btn{margin-top:14px}
 .note{border-radius:var(--r);padding:12px 14px;background:var(--sunk);font-size:14px;margin-top:12px}
 .note.warn{border-left:4px solid var(--warn)}
+.notice{display:flex;gap:10px;align-items:flex-start;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--red);border-radius:14px;padding:12px 12px 12px 14px;font-weight:600;font-size:15px}
+.notice.warn{border-left-color:var(--sun)}.notice.good{border-left-color:var(--good)}
+.notice .nt{flex:1;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
+.notice .nx{flex:none;border:0;background:var(--sunk);border-radius:999px;width:30px;height:30px;font-size:14px;color:var(--muted)}
 
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(10,6,5,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
@@ -288,6 +292,7 @@ footer p{margin:0 0 8px;max-width:70ch}
 
 <main class="wrap">
   <button class="fxbar" id="fxBar" hidden></button>
+  <div class="notice" id="notice" hidden role="status"></div>
   <div class="smartbar" id="smartBar" hidden></div>
   <nav class="cities" id="cities" aria-label="Шаарлар"></nav>
   <label class="f areaf" id="areaWrap" hidden>Район / метро
@@ -504,9 +509,11 @@ function openSheet(html){
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
 
+const VIEWED=new Set();
 function openDetail(key){
   const a=S.ads.find(x=>x.id===key);if(!a)return;
   const c=CAT[a.cat]||{};
+  if(!a.mine&&!S.admin&&!VIEWED.has(a.id)){VIEWED.add(a.id);fetch("/api/ads/"+encodeURIComponent(a.id)+"/view",{method:"POST"}).catch(()=>{})}
   const mine=!!a.mine, canDel=mine||S.admin;
   const contacts=[["Телефон",a.phone],["WhatsApp",a.wa],["Telegram",a.tg]].filter(x=>x[1]);
   openSheet('<div class="shead"><div><div class="status">'+esc(c.nm)+" · "+esc(a.sub)+" · "+ago(a.created)+'</div><h3>'+esc(a.title)+'</h3></div><button class="x" data-close aria-label="Жабуу">✕</button></div>'
@@ -861,7 +868,7 @@ function openMe(){
    +'<button class="mrow" data-go="post"><span class="mi">'+MI.mega+'</span><span>Жарыя берүү<small>Алгачкы 10 жарыя бекер</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="fav"><span class="mi">'+MI.heart+'</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="help"><span class="mi">'+MI.help+'</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
-   +(S.admin?'<button class="mrow" data-go="pending"><span class="mi">'+MI.list+'</span><span>Төлөмдөрдү текшерүү<small id="mePend">…</small></span><span class="chev">›</span></button>'
+   +(S.admin?'<a class="mrow" href="/admin" style="text-decoration:none;color:inherit"><span class="mi">'+MI.mega+'</span><span>🛠 Админ панель<small>Статистика, модерация, колдонуучулар</small></span><span class="chev">›</span></a><button class="mrow" data-go="pending"><span class="mi">'+MI.list+'</span><span>Төлөмдөрдү текшерүү<small id="mePend">…</small></span><span class="chev">›</span></button>'
      +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
      +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="note" id="meFree" hidden></div>'
@@ -930,14 +937,18 @@ document.addEventListener("click",async e=>{
 async function load(){
   try{const j=await api("/api/ads");S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=!!j.admin;S.offline=false}
   catch(x){S.err=x&&x.message;S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
-  S.ready=true;render();adminFeedback();adminPage();
+  S.ready=true;render();adminFeedback();
 }
-const IS_ADMIN_PAGE=/^\/admin\/?$/.test(location.pathname);
-let adminPaged=false;
-function adminPage(){
-  if(!IS_ADMIN_PAGE||adminPaged)return;adminPaged=true;
-  if(S.admin)openMe();else openAdminLogin();
+/* Админдин билдирүүсү: башкы беттин башында */
+async function loadNotice(){
+  try{const r=await fetch("/api/notice");if(!r.ok)return;const n=await r.json();const b=$("notice");
+    let off="";try{off=localStorage.getItem("bb_notice_off")||""}catch(e){}
+    if(!n.text||off===n.id){b.hidden=true;return}
+    b.className="notice "+(n.kind||"info");b.hidden=false;
+    b.innerHTML='<span class="nt">'+esc(n.text)+'</span><button class="nx" data-noticex="'+esc(n.id)+'" aria-label="Жабуу">✕</button>'}catch(e){}
 }
+document.addEventListener("click",e=>{const x=e.target.closest("[data-noticex]");if(!x)return;try{localStorage.setItem("bb_notice_off",x.dataset.noticex)}catch(er){}$("notice").hidden=true});
+loadNotice();setInterval(loadNotice,10*60000);
 load();
 loadFx();setInterval(loadFx,30*60000);
 setInterval(()=>{if(document.visibilityState==="visible")load()},60000);

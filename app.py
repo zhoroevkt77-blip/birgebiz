@@ -104,6 +104,18 @@ CREATE TABLE IF NOT EXISTS free_usage (
     contact_key TEXT PRIMARY KEY,
     used        INT NOT NULL DEFAULT 0
 );
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS views INT NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS ads_ckey_idx ON ads (contact_key);
+CREATE TABLE IF NOT EXISTS blocked (
+    contact_key TEXT PRIMARY KEY,
+    reason      TEXT NOT NULL DEFAULT '',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS settings (
+    k           TEXT PRIMARY KEY,
+    v           TEXT NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS reports (
     ad_id    TEXT NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
     ip_hash  TEXT NOT NULL,
@@ -311,8 +323,9 @@ async def list_ads(x_owner_token: str | None = Header(default=None),
                        (SELECT count(*) FROM ad_photos p WHERE p.ad_id = ads.id) AS nphotos
                 FROM ads
                 WHERE created_at > now() - interval '{AD_LIFETIME_DAYS} days'
-                  AND ((status = 'active' AND NOT hidden) OR owner_hash = %s
-                       OR (%s AND status = 'active'))
+                  AND ((status = 'active' AND NOT hidden
+                        AND contact_key NOT IN (SELECT contact_key FROM blocked))
+                       OR owner_hash = %s OR (%s AND status = 'active'))
                 ORDER BY created_at DESC LIMIT 2000""",
             (owner_hash or "", admin),
         )
@@ -340,6 +353,13 @@ async def create_ad(ad: AdIn, request: Request,
             (owner_hash,))
         if (await cur.fetchone())["n"] >= MAX_ACTIVE_PER_OWNER:
             raise HTTPException(429, f"Бир адамга {MAX_ACTIVE_PER_OWNER} жарыяга чейин. Эскилерин өчүрүңүз.")
+        key0 = contact_key(ad.phone, ad.wa, ad.tg)
+        cur = await conn.execute(
+            """SELECT 1 FROM blocked b WHERE b.contact_key = %s
+               OR b.contact_key IN (SELECT contact_key FROM ads WHERE owner_hash = %s) LIMIT 1""",
+            (key0, owner_hash))
+        if await cur.fetchone():
+            raise HTTPException(403, "Сиздин жарыя берүү мүмкүнчүлүгүңүз модератор тарабынан чектелген.")
         try:
             photos = [parse_image(x, MAX_PHOTO_BYTES, "Сүрөт") for x in ad.photos[:MAX_PHOTOS]]
             thumb = parse_image(ad.thumb, MAX_THUMB_BYTES, "Кичине сүрөт")[0] if (ad.thumb and photos) else None
@@ -413,6 +433,24 @@ async def report_ad(ad_id: str, request: Request):
                 "UPDATE ads SET reports = reports + 1, hidden = (reports + 1 >= %s) WHERE id=%s",
                 (REPORTS_TO_HIDE, ad_id))
     return {"ok": True}
+
+
+@app.post("/api/ads/{ad_id}/view")
+async def view_ad(ad_id: str):
+    async with db().connection() as conn:
+        await conn.execute("UPDATE ads SET views = views + 1 WHERE id=%s", (ad_id,))
+    return {"ok": True}
+
+
+@app.get("/api/notice")
+async def notice_get():
+    async with db().connection() as conn:
+        cur = await conn.execute("SELECT v, updated_at FROM settings WHERE k='notice'")
+        r = await cur.fetchone()
+    if not r:
+        return {"text": "", "kind": "info", "id": ""}
+    kind, _, text = r["v"].partition("|")
+    return {"text": text, "kind": kind or "info", "id": str(int(r["updated_at"].timestamp()))}
 
 
 @app.post("/api/ads/{ad_id}/unhide")
@@ -548,22 +586,155 @@ async def admin_reject(ad_id: str, x_admin_token: str | None = Header(default=No
     return {"ok": True}
 
 
+LIVE = f"created_at > now() - interval '{AD_LIFETIME_DAYS} days'"
+
+
 @app.get("/api/admin/stats")
 async def admin_stats(x_admin_token: str | None = Header(default=None)):
     need_admin(x_admin_token)
     async with db().connection() as conn:
         cur = await conn.execute(f"""SELECT
-            count(*) FILTER (WHERE status='active' AND created_at > now() - interval '{AD_LIFETIME_DAYS} days') AS active,
+            count(*) AS total,
+            count(*) FILTER (WHERE status='active' AND NOT hidden AND {LIVE}) AS active,
             count(*) FILTER (WHERE created_at > now() - interval '1 day') AS today,
+            count(*) FILTER (WHERE NOT ({LIVE})) AS expired,
             count(*) FILTER (WHERE status='pending') AS pending,
             count(*) FILTER (WHERE hidden) AS hidden,
+            count(*) FILTER (WHERE thumb IS NOT NULL) AS photos,
+            coalesce(sum(views), 0) AS views,
+            count(DISTINCT contact_key) FILTER (WHERE contact_key <> '') AS users,
             coalesce(sum(fee) FILTER (WHERE status='active' AND fee > 0), 0) AS earned
             FROM ads""")
-        st = await cur.fetchone()
-        cur = await conn.execute(f"""SELECT cat, count(*) AS n FROM ads WHERE status='active'
-            AND created_at > now() - interval '{AD_LIFETIME_DAYS} days' GROUP BY cat ORDER BY n DESC""")
-        by = await cur.fetchall()
-    return {**st, "by_cat": by, "pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT}
+        st = dict(await cur.fetchone())
+        cur = await conn.execute("""SELECT count(*) AS n FROM (SELECT contact_key FROM ads WHERE contact_key <> ''
+            GROUP BY contact_key HAVING min(created_at) > now() - interval '1 day') t""")
+        st["users_today"] = (await cur.fetchone())["n"]
+        cur = await conn.execute("SELECT count(*) AS n FROM blocked")
+        st["blocked"] = (await cur.fetchone())["n"]
+        cur = await conn.execute(f"""SELECT cat, count(*) AS n FROM ads WHERE status='active' AND NOT hidden
+            AND {LIVE} GROUP BY cat ORDER BY n DESC""")
+        st["by_cat"] = await cur.fetchall()
+        cur = await conn.execute(f"""SELECT city, count(*) AS n FROM ads WHERE status='active' AND NOT hidden
+            AND {LIVE} GROUP BY city ORDER BY n DESC LIMIT 15""")
+        st["by_city"] = await cur.fetchall()
+    return {**st, "pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT}
+
+
+ADMIN_FILTERS = {
+    "all": "TRUE",
+    "active": f"status='active' AND NOT hidden AND {LIVE}",
+    "today": "created_at > now() - interval '1 day'",
+    "expired": f"NOT ({LIVE})",
+    "hidden": "hidden",
+    "pending": "status='pending'",
+    "rejected": "status='rejected'",
+    "photos": "thumb IS NOT NULL",
+    "blocked": "contact_key IN (SELECT contact_key FROM blocked)",
+}
+
+
+@app.get("/api/admin/ads")
+async def admin_ads(f: str = "all", q: str = "", cat: str = "", key: str = "",
+                    x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    where, args = [ADMIN_FILTERS.get(f, "TRUE")], []
+    if cat:
+        where.append("cat = %s"); args.append(cat)
+    if key:
+        where.append("contact_key = %s"); args.append(key)
+    q = q.strip()[:60]
+    if q:
+        where.append("(title ILIKE %s OR body ILIKE %s OR name ILIKE %s OR phone ILIKE %s OR wa ILIKE %s "
+                     "OR tg ILIKE %s OR city ILIKE %s OR area ILIKE %s OR sub ILIKE %s OR id = %s)")
+        like = "%" + q.replace("%", "").replace("_", "") + "%"
+        args += [like] * 9 + [q]
+    async with db().connection() as conn:
+        cur = await conn.execute(f"""SELECT {AD_COLS}, contact_key, views, (thumb IS NOT NULL) AS has_thumb,
+            (SELECT count(*) FROM ad_photos p WHERE p.ad_id = ads.id) AS nphotos,
+            NOT ({LIVE}) AS expired,
+            contact_key IN (SELECT contact_key FROM blocked) AS blocked
+            FROM ads WHERE {" AND ".join(where)} ORDER BY created_at DESC LIMIT 300""", args)
+        rows = await cur.fetchall()
+    out = []
+    for r in rows:
+        j = to_json(r, None, True)
+        j.update(key=r["contact_key"], views=r["views"], expired=r["expired"], blocked=r["blocked"])
+        out.append(j)
+    return {"items": out}
+
+
+@app.get("/api/admin/users")
+async def admin_users(q: str = "", blocked: bool = False,
+                      x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    where, args = ["a.contact_key <> ''"], []
+    q = q.strip()[:60]
+    if q:
+        like = "%" + q.replace("%", "").replace("_", "") + "%"
+        where.append("(a.name ILIKE %s OR a.phone ILIKE %s OR a.wa ILIKE %s OR a.tg ILIKE %s OR a.contact_key ILIKE %s)")
+        args += [like] * 5
+    having = "HAVING bool_or(b.contact_key IS NOT NULL)" if blocked else ""
+    async with db().connection() as conn:
+        cur = await conn.execute(f"""SELECT a.contact_key AS key, count(*) AS n,
+            count(*) FILTER (WHERE a.status='active' AND NOT a.hidden AND a.{LIVE}) AS active,
+            max(a.created_at) AS last, min(a.created_at) AS first,
+            (array_agg(a.name ORDER BY a.created_at DESC))[1] AS name,
+            (array_agg(a.phone ORDER BY a.created_at DESC))[1] AS phone,
+            (array_agg(a.wa ORDER BY a.created_at DESC))[1] AS wa,
+            (array_agg(a.tg ORDER BY a.created_at DESC))[1] AS tg,
+            (array_agg(a.city ORDER BY a.created_at DESC))[1] AS city,
+            coalesce(sum(a.views), 0) AS views, coalesce(sum(a.reports), 0) AS reports,
+            max(coalesce(fu.used, 0)) AS used,
+            bool_or(b.contact_key IS NOT NULL) AS blocked, max(b.reason) AS reason
+            FROM ads a LEFT JOIN free_usage fu ON fu.contact_key = a.contact_key
+                       LEFT JOIN blocked b ON b.contact_key = a.contact_key
+            WHERE {" AND ".join(where)} GROUP BY a.contact_key {having}
+            ORDER BY max(a.created_at) DESC LIMIT 500""", args)
+        rows = await cur.fetchall()
+    for r in rows:
+        r["last"] = int(r["last"].timestamp() * 1000)
+        r["first"] = int(r["first"].timestamp() * 1000)
+    return {"items": rows, "free_limit": FREE_LIMIT}
+
+
+class BlockIn(BaseModel):
+    key: str = Field(min_length=3, max_length=80)
+    reason: str = Field(default="", max_length=200)
+
+
+@app.post("/api/admin/block")
+async def admin_block(b: BlockIn, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        await conn.execute("""INSERT INTO blocked (contact_key, reason) VALUES (%s, %s)
+            ON CONFLICT (contact_key) DO UPDATE SET reason = EXCLUDED.reason""", (b.key.strip(), b.reason.strip()))
+    return {"ok": True}
+
+
+@app.delete("/api/admin/block/{key}")
+async def admin_unblock(key: str, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        await conn.execute("DELETE FROM blocked WHERE contact_key=%s", (key,))
+    return {"ok": True}
+
+
+class NoticeIn(BaseModel):
+    text: str = Field(default="", max_length=400)
+    kind: str = "info"
+
+
+@app.post("/api/admin/notice")
+async def admin_notice(n: NoticeIn, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    kind = n.kind if n.kind in ("info", "warn", "good") else "info"
+    async with db().connection() as conn:
+        if n.text.strip():
+            await conn.execute("""INSERT INTO settings (k, v, updated_at) VALUES ('notice', %s, now())
+                ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = now()""", (kind + "|" + n.text.strip(),))
+        else:
+            await conn.execute("DELETE FROM settings WHERE k='notice'")
+    return {"ok": True}
 
 
 @app.exception_handler(HTTPException)
@@ -607,5 +778,5 @@ async def index():
 
 @app.get("/admin")
 async def admin_page():
-    """Модератор кирүүсү: өзүнчө дарек, жалпы колдонуучуларга баскыч көрүнбөйт."""
-    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache", "X-Robots-Tag": "noindex"})
+    """Админ панель: өзүнчө барак, жалпы колдонуучуларга баскыч көрүнбөйт."""
+    return FileResponse(STATIC / "admin.html", headers={"Cache-Control": "no-cache", "X-Robots-Tag": "noindex"})
