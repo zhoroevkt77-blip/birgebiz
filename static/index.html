@@ -45,7 +45,13 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .search input{flex:1;min-width:0;border:0;background:transparent;padding:8px 0;color:var(--fg);font-size:16px}
 .search input::placeholder{color:#8a7d76}
 .sgo{flex:none;border:0;border-radius:999px;background:var(--sun);color:#000;font-weight:900;font-size:16px;padding:10px 20px;letter-spacing:-.2px}
-.shint{flex-basis:100%;margin:0;color:#fff;font-size:14px;line-height:1.35}
+.shint{flex-basis:100%;margin:0;color:#fff;font-size:14px;line-height:1.35;transition:opacity .15s}
+header.compact .shint{display:none}
+header.compact .hrow{padding-block:8px}
+.locpill{flex-basis:100%;display:flex;align-items:center;gap:8px;border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:8px 8px 8px 14px;font-weight:800;font-size:15px;letter-spacing:-.2px;text-align:left;min-width:0}
+.locpill .lp-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.locpill .lp-c{flex:none;font-size:13px;font-weight:700;opacity:.9}
+.locpill .lp-x{flex:none;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.22);display:grid;place-items:center;font-size:14px}
 .shint b{color:var(--sun);font-weight:900}
 .smartbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px;padding:10px 12px;background:var(--surface);border:2px solid var(--fg);border-radius:14px}
 .sb-l{font-weight:900;letter-spacing:-.2px}
@@ -244,6 +250,7 @@ footer p{margin:0 0 8px;max-width:70ch}
       <button class="sgo" type="submit">Изде</button>
     </form>
     <p class="shint"><b>✨ Акылдуу издөө:</b> Эмне керек, кайсы шаарда, канчага? Ушуну жазсаңыз жетет.</p>
+    <button class="locpill" id="locPill" hidden></button>
   </div>
 </header>
 
@@ -398,7 +405,20 @@ async function api(path,opts={}){
   if(!r.ok)throw{message:j.error||("Сервер ката берди ("+r.status+"). Кайра аракет кылыңыз.")};return j}
 try{const c=localStorage.getItem("bb_city");if(c&&CITIES.includes(c))S.city=c}catch(e){}
 
+function renderLoc(){
+  const b=$("locPill");if(!S.city){b.hidden=true;return}
+  b.hidden=false;
+  b.innerHTML='<span aria-hidden="true">📍</span><span class="lp-t">'+esc(S.city)+(S.area?', '+esc(S.area.replace(/^м\.\s*/,"м. ")):'')+'</span><span class="lp-c">Алмаштыруу ▾</span><span class="lp-x" data-locx aria-label="Шаарды алып салуу">✕</span>';
+}
+function openLoc(){
+  const ar=S.city&&AREAS[S.city];
+  openSheet('<div class="shead"><h3>Шаар тандаңыз</h3><button class="x" data-close aria-label="Жабуу">✕</button></div>'
+   +(ar?'<h4 class="wq" style="margin-top:0">'+esc(S.city)+': району</h4><div class="wg"><button class="wop wide'+(!S.area?' on':'')+'" data-larea="">📍 Бүт шаар</button>'+ar.map(x=>'<button class="wop'+(S.area===x?' on':'')+'" data-larea="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div><h4 class="wq">Башка шаар</h4>':'')
+   +'<div class="wg"><button class="wop wide'+(!S.city?' on':'')+'" data-lcity="">Бардык шаарлар</button>'+CITIES.map(c=>'<button class="wop'+(S.city===c?' on':'')+'" data-lcity="'+esc(c)+'">'+esc(c)+'</button>').join("")+'</div>');
+}
+function setCity(c){S.city=c||null;S.area=null;try{localStorage.setItem("bb_city",S.city||"")}catch(x){}render()}
 function renderCities(){
+  renderLoc();
   $("cities").innerHTML=['<button class="chip" data-c="" aria-pressed="'+(!S.city)+'">Бардык шаарлар</button>'].concat(CITIES.map(c=>'<button class="chip" data-c="'+esc(c)+'" aria-pressed="'+(S.city===c)+'">'+esc(c)+'</button>')).join("");
   const ar=S.city&&AREAS[S.city];
   $("areaWrap").hidden=!ar;
@@ -563,6 +583,9 @@ async function delAd(key){
 
 document.addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
+  if(t.id==="locPill"){if(e.target.closest("[data-locx]")){setCity(null);toast("Бардык шаарлар");return}openLoc();return}
+  if(t.dataset.lcity!==undefined){closeSheet();setCity(t.dataset.lcity);if(S.city&&AREAS[S.city])openLoc();return}
+  if(t.dataset.larea!==undefined){S.area=t.dataset.larea||null;closeSheet();render();return}
   if(t.dataset.c!==undefined){S.city=t.dataset.c||null;S.area=null;try{localStorage.setItem("bb_city",S.city||"")}catch(x){}render();return}
   if(t.dataset.cat){S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;S.fav=false;setTab("home");render();return}
   if(t.dataset.sub!==undefined){S.sub=t.dataset.sub||null;render();return}
@@ -706,11 +729,12 @@ function openMe(){
 }
 $("home").onclick=()=>goTab("home");
 $("fxBar").onclick=openFx;
+{const hd=document.querySelector("header");let cmp=false;const onS=()=>{const c=scrollY>120;if(c!==cmp){cmp=c;hd.classList.toggle("compact",c)}};addEventListener("scroll",onS,{passive:true});onS()}
 $("sform").addEventListener("submit",e=>{e.preventDefault();$("q").blur();runSmart($("q").value)});
 $("q").addEventListener("input",e=>{if(!e.target.value.trim()&&S.smart)runSmart("")});
 const EX=["Койка-место Люблино 8 миң","Патент Москва","Посылка Бишкекке","Склад жумуш күнүнө","Стоматолог Казань","Суткалык батир Питер","Айфон 30 миң Екб"];
 let exi=0;setInterval(()=>{const q=$("q");if(document.activeElement!==q&&!q.value){exi=(exi+1)%EX.length;q.placeholder=EX[exi]}},3000);
-$("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderFeed()});
+$("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderLoc();renderFeed()});
 
 render();
 
