@@ -442,6 +442,12 @@ async def view_ad(ad_id: str):
     return {"ok": True}
 
 
+@app.get("/api/config")
+async def config():
+    """Сайт үчүн жалпы жөндөөлөр: акы алуу күйүкпү (PAY_INFO коюлганбы), бекер лимит."""
+    return {"pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT}
+
+
 @app.get("/api/notice")
 async def notice_get():
     async with db().connection() as conn:

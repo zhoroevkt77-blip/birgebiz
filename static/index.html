@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>БИЗ БИРГЕБИЗ!</title>
-<meta name="description" content="Россиядагы кыргыз мекендештер жана мигранттар үчүн бекер жарыя тактасы: жумуш, койка-место, патент, посылка, билет.">
+<meta name="description" content="Россиядагы кыргыз мекендештер жана мигранттар үчүн жарыя тактасы (алгачкы 10 жарыя бекер): жумуш, койка-место, патент, посылка, билет.">
 <meta name="theme-color" content="#0b6fb8">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/static/icon.svg?v=2" type="image/svg+xml">
@@ -149,6 +149,8 @@ h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(
 .empty .btn{margin-top:14px}
 .note{border-radius:var(--r);padding:12px 14px;background:var(--sunk);font-size:14px;margin-top:12px}
 .note.warn{border-left:4px solid var(--warn)}
+.faq ul.plist{margin:0 0 8px;padding-left:20px}.faq ul.plist li{margin:4px 0}
+.faq .pnote{background:var(--sunk);border-radius:10px;padding:8px 12px;font-weight:600}
 .notice{display:flex;gap:10px;align-items:flex-start;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--red);border-radius:14px;padding:12px 12px 12px 14px;font-weight:600;font-size:15px}
 .notice.warn{border-left-color:var(--sun)}.notice.good{border-left-color:var(--good)}
 .notice .nt{flex:1;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
@@ -316,7 +318,7 @@ footer p{margin:0 0 8px;max-width:70ch}
 </main>
 
 <footer class="wrap">
-  <p><b>БИЗ БИРГЕБИЗ!</b> — мекендештер үчүн бекер жарыя тактасы. Жарыяларды колдонуучулар өздөрү берет, алардын тууралыгы үчүн жарыя ээси жооп берет.</p>
+  <p><b>БИЗ БИРГЕБИЗ!</b> — мекендештердин жарыя тактасы. Алгачкы 10 жарыя бекер. Жарыяларды колдонуучулар өздөрү берет, алардын тууралыгы үчүн жарыя ээси жооп берет.</p>
   <p>Эрежелер: алдамчылык, мыйзамсыз кызмат, тил тийгизүү жана жалган документ сунуштаган жарыяларга тыюу салынат. Шектүү жарыяны көрсөңүз, «⚠️ Шектүү деп кабарлоо» баскычын басыңыз — 3 кабардан кийин ал жашырылат.</p>
   <p>Эч качан алдын ала толук акча которбоңуз жана паспортуңузду бөтөн адамга бербеңиз.</p>
 </footer>
@@ -491,7 +493,7 @@ function renderFeed(){
     if(S.offline) msg='<b>Жарыялар азыр жүктөлбөй жатат</b>'+esc(S.err||"Интернетти текшерип, баракты жаңыртыңыз.");
     else if(!S.ready) msg='<b>Жарыялар жүктөлүүдө…</b>Бир аз күтө туруңуз.';
     else if(S.fav) msg='<b>Тандалган жарыя жок</b>Жарыяны ачып, ❤️ Тандалганга кошуу баскычын басыңыз.';
-    else if(S.mine) msg='<b>Сизде азырынча жарыя жок</b>Биринчи жарыяңызды бериңиз — бекер.';
+    else if(S.mine) msg='<b>Сизде азырынча жарыя жок</b>Биринчи жарыяңызды бериңиз — алгачкы 10 жарыя бекер.';
     else if(!S.ads.length) msg='<b>Биринчи жарыяны сиз бериңиз</b>Жумуш, койка-место, посылка же кызмат — мекендештер ушул жерден издейт.';
     else msg='<b>Бул тандоо боюнча жарыя табылган жок</b>Башка шаарды же категорияны тандап көрүңүз.';
     $("feed").innerHTML='<div class="empty">'+msg+(!S.offline?'<br><button class="btn btn-red" data-act="post">+ Жарыя берүү</button>':'')+'</div>';
@@ -559,7 +561,7 @@ const W={step:0,d:{},allCities:false};
 const wzChips=()=>{const d=W.d,a=[];if(d.cat)a.push(CAT[d.cat].nm);if(d.subs&&d.subs.length)a.push(d.subs.join(", "));if(d.city)a.push(d.city);if(d.area)a.push(d.area);else if(d.city&&W.step>3)a.push("📍 Бүт шаар");if(d.title)a.push(d.title.length>22?d.title.slice(0,22)+"…":d.title);if(d.price)a.push(fmt(d.price)+" "+(d.cur==="KGS"?"сом":"₽"));return a.length?'<div class="wchips">'+a.map(x=>'<span class="wchip">'+esc(x)+'</span>').join("")+'</div>':""};
 const wops=(list,key,sel)=>'<div class="wg">'+list.map(x=>'<button class="wop'+(sel===x?' on':'')+'" data-w'+key+'="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>';
 const WSTEPS=[
- ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="cats">'+CAT_ORDER.map(id=>catCard(id,null,'data-wcat="'+id+'" aria-pressed="'+(W.d.cat===id)+'"')).join("")+'</div>',
+ ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><p class="whint">🎁 Алгачкы '+((S.cfg&&S.cfg.free_limit)||10)+' жарыя бекер'+(S.cfg&&S.cfg.pay_enabled?', андан кийин категорияга жараша 50–200 ₽.':'. Азырынча бардык жарыялар бекер.')+'</p><div class="cats">'+CAT_ORDER.map(id=>catCard(id,null,'data-wcat="'+id+'" aria-pressed="'+(W.d.cat===id)+'"')).join("")+'</div>',
  ()=>{const c=W.d.cat,multi=!SINGLE.has(c),sel=W.d.subs||[];
    if(!multi)return '<h4 class="wq">Кайсы түрү?</h4>'+wops(CAT[c].subs,"sub",sel[0]);
    return '<h4 class="wq">Кайсы түрү?</h4><p class="whint">Бирөөнү же бир нечесин тандап, анан «Даяр» баскычын басыңыз.</p><div class="wg">'+CAT[c].subs.map(x=>'<button class="wop'+(sel.includes(x)?' on':'')+'" data-wsubm="'+esc(x)+'" aria-pressed="'+sel.includes(x)+'">'+(sel.includes(x)?'✓ ':'')+esc(x)+'</button>').join("")+'</div><div class="err" id="we"></div><button class="wgo" data-wsubok'+(sel.length?'':' aria-disabled="true" style="opacity:.55"')+'>Даяр'+(sel.length>1?' ('+sel.length+')':'')+'</button>'},
@@ -850,14 +852,22 @@ function openFx(){
   ["cvA","cvC","cvD"].forEach(id=>$(id).addEventListener("input",()=>{calc();renderSvc()}));calc();loadSvc();
 }
 function openHelp(){
-  const q=[["Жарыяны кантип берем?","Ылдыйдагы кызыл «+» баскычын басыңыз, категорияны, шаарды жана байланышты жазыңыз. Жарыя ошол замат чыгат. Бекер."],
+  const fl=(S.cfg&&S.cfg.free_limit)||10;
+  const paid=["Жарыя берүү акылуубу?",'<p>Ар бир телефон номерине <b>алгачкы '+fl+' жарыя бекер</b>. Андан кийинки жарыялардын баасы категорияга жараша:</p><ul class="plist">'
+    +'<li><b>Дайыма бекер:</b> Кайрымдуулук, Жумуш издөө, Барахолка → «Бекер берем»</li>'
+    +'<li><b>50 ₽:</b> Барахолка, «Кыргызстанга кайтам» / «Россияга барам», «Батир / койка издейм», унааны сатып алуу же ижарага алуу</li>'
+    +'<li><b>100 ₽:</b> Жумуш берүү, Туракжай, Посылка, Жүргүнчү ташуу, Тамак-аш, Сулуулук, Билим, Оңдоо</li>'
+    +'<li><b>200 ₽:</b> Юридикалык кызмат, Авиакасса, Медицина, Авто кызмат, Автоунаа</li></ul>'
+    +'<p>Төлөгөндөн кийин чектин скриншотун жүктөйсүз. Модератор текшергенден кийин жарыя чыгат. Канча бекер жарыяңыз калганын жарыя берүүнүн акыркы кадамында көрөсүз.</p>'
+    +(S.cfg&&S.cfg.pay_enabled?'':'<p class="pnote">🎁 Азырынча бардык жарыялар бекер, акы алуу жакында башталат.</p>'),true];
+  const q=[paid,["Жарыяны кантип берем?","Ылдыйдагы кызыл «+» баскычын басыңыз, категорияны, шаарды жана байланышты жазыңыз. Жарыя ошол замат чыгат. Алгачкы 10 жарыя бекер."],
   ["Жарыямды кантип өчүрөм?","Кабинет → Менин жарыяларым. Жарыяны ачып, «Жарыяны өчүрүү» басыңыз. Жарыяны кайсы телефондон берсеңиз, ошол телефондон гана өчүрө аласыз."],
   ["Жарыя канча убакыт турат?","60 күн. Андан кийин тизмеден өзү чыгып кетет, керек болсо кайра бериңиз."],
   ["Алдамчыдан кантип сак болом?","Алдын ала толук акча которбоңуз. Паспортуңузду бөтөн адамга бербеңиз. Патент, каттоо жана документтерди расмий жерден текшериңиз. Шектүү жарыяга «⚠️ Шектүү деп кабарлоо» басыңыз."],
   ["Шектүү жарыяны кабарласам эмне болот?","3 кабар алган жарыя бардыгынан жашырылат, модератор карап чыгат."],
   ["Сайтты телефонго колдонмо кылып орнотсо болобу?","Ооба. Браузердин ⋮ менюсунан «Башкы экранга кошуу» басыңыз."]];
   setTab("help");
-  openSheet('<div class="shead"><h3>Жардам</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="faq">'+q.map(x=>'<details><summary>'+esc(x[0])+'</summary><p>'+esc(x[1])+'</p></details>').join("")+'</div>');
+  openSheet('<div class="shead"><h3>Жардам</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="faq">'+q.map((x,i)=>'<details'+(i===0?' open':'')+'><summary>'+esc(x[0])+'</summary>'+(x[2]?x[1]:'<p>'+esc(x[1])+'</p>')+'</details>').join("")+'</div>');
 }
 const MI={list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3H9z"/><path d="M7 4.5H5V21h14V4.5h-2"/><path d="M9 11h6M9 15h6M9 19h3"/></svg>',mega:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6l-7 4z"/><path d="M17.5 9a4 4 0 0 1 0 6"/><path d="M7 14l1.5 5h2.5l-1-4.5"/></svg>',heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg>',help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>'};
 function openMe(){
@@ -947,6 +957,8 @@ async function loadNotice(){
 }
 document.addEventListener("click",e=>{const x=e.target.closest("[data-noticex]");if(!x)return;try{localStorage.setItem("bb_notice_off",x.dataset.noticex)}catch(er){}$("notice").hidden=true});
 loadNotice();setInterval(loadNotice,10*60000);
+S.cfg={pay_enabled:false,free_limit:10};
+fetch("/api/config").then(r=>r.ok?r.json():null).then(j=>{if(j)S.cfg=j}).catch(()=>{});
 load();
 loadFx();setInterval(loadFx,30*60000);
 setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
