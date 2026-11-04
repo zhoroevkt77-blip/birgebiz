@@ -164,6 +164,34 @@ label.f span.req{color:var(--red)}
 .status{font-size:13px;color:var(--muted)}
 .tunduk{opacity:.95}
 .areaf{max-width:320px;margin-bottom:4px}
+.wpb{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;margin:-4px 0 12px}
+.wpb span{display:block;height:100%;background:var(--red);border-radius:3px;transition:width .2s}
+.wchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.wchip{background:var(--sun);color:#000;font-weight:800;font-size:13px;padding:5px 11px;border-radius:999px;letter-spacing:-.2px}
+.wq{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.2;margin:14px 0 12px;color:var(--fg);text-wrap:balance}
+.whint{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.wg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wop{background:var(--surface);color:var(--fg);border:2px solid var(--fg);border-radius:999px;padding:13px 10px;font-weight:800;font-size:15px;letter-spacing:-.2px;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.wop.on{background:var(--fg);color:var(--bg)}
+.wop.wide{width:100%;margin-top:8px}
+.wseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.wcats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wcat{border:0;padding:0;background:none;border-radius:16px;line-height:0}
+.wcat img{width:100%;height:auto;border-radius:16px}
+.wcat:active,.wop:active{transform:scale(.97)}
+.win{display:block;width:100%;font:inherit;font-size:16px;border:2px solid var(--fg);border-radius:12px;padding:13px 14px;background:var(--surface);color:var(--fg);font-weight:500}
+.win::placeholder{color:#8a7d76;font-weight:400}
+.win:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent)}
+textarea.win{resize:vertical;min-height:110px}
+#wz label.f{margin-top:10px}
+.wgo{display:block;width:100%;margin-top:12px;border:0;border-radius:999px;background:var(--red);color:#fff;font-weight:900;font-size:17px;padding:15px;letter-spacing:-.3px}
+.wgo:disabled{opacity:.55}
+.wsk{display:block;width:100%;margin-top:8px;border:0;background:none;color:var(--fg);font-weight:800;text-decoration:underline;padding:8px}
+.wbk{display:block;width:100%;margin-top:10px;border:2px solid var(--fg);background:var(--surface);color:var(--fg);border-radius:999px;font-weight:800;font-size:16px;padding:12px}
+.wprev{background:var(--surface);border:2px solid var(--fg);border-radius:16px;padding:14px;display:grid;gap:6px}
+.wprev b{font-size:18px;font-weight:900;letter-spacing:-.3px;overflow-wrap:anywhere}
+.wprev p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+#wz .check{margin-top:12px}
 body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;background:var(--surface);border-top:1px solid var(--line);padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
 .tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:-.2px;min-width:0}
@@ -431,52 +459,69 @@ function openDetail(key){
 }
 
 function opts(arr,sel){return arr.map(v=>'<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>').join("")}
-function openPost(){
-  const c0=S.cat||"job";
-  openSheet('<div class="shead"><h3>Жаңы жарыя</h3><button class="x" data-close aria-label="Жабуу">✕</button></div>'
-  +'<form class="form" id="pform" novalidate>'
-  +'<div class="row2"><label class="f">Категория <span class="req">*</span><select id="fcat">'+CATS.map(c=>'<option value="'+c.id+'"'+(c.id===c0?' selected':'')+'>'+esc(c.nm)+'</option>').join("")+'</select></label>'
-  +'<label class="f">Түрү <span class="req">*</span><select id="fsub"></select></label></div>'
-  +'<label class="f">Аталышы <span class="req">*</span><input id="ftitle" maxlength="80" placeholder="Мис.: Складка грузчик керек, төлөм күн сайын"></label>'
-  +'<label class="f">Толук маалымат <span class="req">*</span><textarea id="ftext" maxlength="1500" placeholder="Шарттар, график, документтер, дареги…"></textarea></label>'
-  +'<div class="row2"><label class="f">Баасы (бош калса — келишим)<input id="fprice" inputmode="numeric" placeholder="3500"></label>'
-  +'<div class="row2"><label class="f">Валюта<select id="fcur"><option value="RUB">₽ рубль</option><option value="KGS">сом</option></select></label><label class="f">Ченем<select id="fper"></select></label></div></div>'
-  +'<div class="row2"><label class="f">Шаар <span class="req">*</span><select id="fcity">'+opts(CITIES,S.city||"Москва")+'</select></label>'
-  +'<label class="f">Район / метро<input id="farea" maxlength="60" list="fareaList" autocomplete="off" placeholder="Тизмеден тандаңыз же жазыңыз"><datalist id="fareaList"></datalist></label></div>'
-  +'<div class="row2"><label class="f">Аты-жөнү<input id="fname" maxlength="40" placeholder="Азамат"></label>'
-  +'<label class="f">Телефон<input id="fphone" inputmode="tel" maxlength="24" placeholder="+7 900 000-00-00"></label></div>'
-  +'<div class="row2"><label class="f">WhatsApp<input id="fwa" inputmode="tel" maxlength="24" placeholder="+996 700 00 00 00"></label>'
-  +'<label class="f">Telegram<input id="ftg" maxlength="40" placeholder="@username"></label></div>'
-  +'<label class="check"><input type="checkbox" id="fkg"> «Мекендештерге» белгиси</label>'
-  +'<div class="err" id="ferr" role="alert"></div>'
-  +'<button class="btn btn-red" type="submit" id="fsend" style="justify-content:center">Жарыяны жайгаштыруу</button>'
-  +'<div class="status">Жарыяңызды каалаган убакта өзүңүз өчүрө аласыз. Алдамчылык жарыялар модерация тарабынан өчүрүлөт.</div>'
-  +'</form>');
-  const fill=()=>{const c=CAT[$("fcat").value];$("fsub").innerHTML=opts(c.subs);$("fper").innerHTML='<option value="">—</option>'+opts(c.unit||[])};
-  fill();$("fcat").addEventListener("change",fill);
-  const fillArea=()=>{const a=AREAS[$("fcity").value]||[];$("fareaList").innerHTML=a.map(x=>'<option value="'+esc(x)+'"></option>').join("");$("farea").placeholder=a.length?"Тизмеден тандаңыз же жазыңыз":"Мис.: Центр, Северный"};
-  fillArea();$("fcity").addEventListener("change",()=>{$("farea").value="";fillArea()});
-  $("pform").addEventListener("submit",submitPost);
+/* ===== Жарыя берүү: ТАП!тагыдай кадам-кадам ===== */
+const QX={job:["Милдеттери кандай?","Мис: Жүк түшүрүү, сортировка. График 2/2, тамак бар"],jobseek:["Эмне кыла аласыз?","Мис: 3 жыл курулушта иштегем, патентим бар"],carsale:["Унаа тууралуу жазыңыз","Мис: Toyota Camry 2015, 120 миң км, документтери таза"],house:["Канча киши батат, эмнелер бар?","Мис: 2 кишиге, кир жуучу, Wi-Fi бар, метрого 5 мүнөт"],law:["Кандай жардам бересиз?","Мис: Патентти 3 күндө чыгарам, кепилдик менен"],fin:["Шарттары кандай?","Мис: Комиссиясыз, 10 мүнөттө жетет"],cargo:["Кайдан кайда, канча убакытта?","Мис: Москва → Бишкек, 7–10 күн, үйгө чейин"],ride:["Каттам жана убакыт","Мис: Москва → Ош, жума сайын, 4 орун бош"],ticket:["Кайсы багыттар, кандай шарт?","Мис: Москва – Бишкек, жүк 20 кг кошо"],med:["Кандай кызмат көрсөтөсүз?","Мис: Кыргызча сүйлөгөн стоматолог, кезексиз"],beauty:["Кандай кызмат?","Мис: Эркектер чач тарач, үйгө барып да"],food:["Эмне сатасыз / сунуштайсыз?","Мис: Жаңы халал эт, үйгө жеткирүү"],edu:["Курс тууралуу","Мис: Патент экзаменине даярдоо, 2 жума"],auto:["Кандай кызмат?","Мис: Корей машиналарын оңдойм, тетиктер бар"],help:["Эмне болду, кандай жардам керек?","Мис: Мекендешибиз ооруканада, кан керек"],market:["Буюм тууралуу","Мис: iPhone 13, 128 GB, абалы жакшы"]};
+const TOPC=["Москва","Подмосковье","Санкт-Петербург","Екатеринбург","Новосибирск","Якутск","Казань","Сургут"];
+const W={step:0,d:{},allCities:false};
+const wzChips=()=>{const d=W.d,a=[];if(d.cat)a.push(CAT[d.cat].nm);if(d.sub)a.push(d.sub);if(d.city)a.push(d.city);if(d.area)a.push(d.area);else if(d.city&&W.step>3)a.push("📍 Бүт шаар");if(d.title)a.push(d.title.length>22?d.title.slice(0,22)+"…":d.title);if(d.price)a.push(fmt(d.price)+" "+(d.cur==="KGS"?"сом":"₽"));return a.length?'<div class="wchips">'+a.map(x=>'<span class="wchip">'+esc(x)+'</span>').join("")+'</div>':""};
+const wops=(list,key,sel)=>'<div class="wg">'+list.map(x=>'<button class="wop'+(sel===x?' on':'')+'" data-w'+key+'="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>';
+const WSTEPS=[
+ ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="wcats">'+CAT_ORDER.map(id=>'<button class="wcat" data-wcat="'+id+'" aria-label="'+esc(CAT[id].nm)+'"><img src="/static/cats/'+id+'.webp" alt="" width="'+CIMG[id][0]+'" height="'+CIMG[id][1]+'"></button>').join("")+'</div>',
+ ()=>'<h4 class="wq">Кайсы түрү?</h4>'+wops(CAT[W.d.cat].subs,"sub",W.d.sub),
+ ()=>{const list=W.allCities?CITIES:TOPC;return '<h4 class="wq">Кайсы шаарда?</h4>'+wops(list,"city",W.d.city)+(W.allCities?'':'<button class="wop wide" data-wallc>Башка шаарлар ('+(CITIES.length-TOPC.length)+') ›</button>')},
+ ()=>{const ar=AREAS[W.d.city];return '<h4 class="wq">Району / метросу?</h4><button class="wop wide" data-warea="" style="margin:0 0 8px">📍 Бүт шаар боюнча</button>'+(ar?wops(ar,"area",W.d.area):'')+'<p class="whint" style="margin-top:12px">'+(ar?'Тизмеде жок болсо, өзүңүз жазыңыз:':'Каалосоңуз жазыңыз (мис: 5-мкр, Центр):')+'</p><input class="win" id="wf" maxlength="60" value="'+esc(W.d.area||"")+'" placeholder="Район же метро"><button class="wgo" data-wnext="area" data-min="0">Улантуу</button>'},
+ ()=>'<h4 class="wq">Кыскача аталышы</h4><p class="whint">Адамдар тизмеден ушуну көрөт.</p><input class="win" id="wf" maxlength="80" value="'+esc(W.d.title||"")+'" placeholder="'+esc(W.d.cat==="house"?"Мис: Люблинодо койка-место":W.d.cat==="jobseek"?"Мис: Курулушта жумуш издейм":"Мис: Складка грузчик керек")+'"><div class="err" id="we"></div><button class="wgo" data-wnext="title" data-min="5">Улантуу</button>',
+ ()=>'<h4 class="wq">'+esc(QX[W.d.cat][0])+'</h4><textarea class="win" id="wf" rows="4" maxlength="1500" placeholder="'+esc(QX[W.d.cat][1])+'">'+esc(W.d.text||"")+'</textarea><div class="err" id="we"></div><button class="wgo" data-wnext="text" data-min="10">Улантуу</button>',
+ ()=>{const c=CAT[W.d.cat];return '<h4 class="wq">Баасы канча?</h4><input class="win" id="wf" inputmode="numeric" value="'+(W.d.price??"")+'" placeholder="Мис: 3500"><div class="wseg"><button class="wop'+(W.d.cur!=="KGS"?" on":"")+'" data-wcur="RUB">₽ рубль</button><button class="wop'+(W.d.cur==="KGS"?" on":"")+'" data-wcur="KGS">сом</button></div>'+(c.unit&&c.unit.length?'<p class="whint">Ченеми:</p>'+wops(c.unit,"per",W.d.per):'')+'<div class="err" id="we"></div><button class="wgo" data-wnext="price" data-min="0">Улантуу</button><button class="wsk" data-wskipprice>Келишим боюнча</button>'},
+ ()=>'<h4 class="wq">Сиз менен кантип байланышат?</h4><p class="whint">Жок дегенде бирөөнү жазыңыз.</p><label class="f">Телефон<input class="win" id="wph" inputmode="tel" maxlength="24" value="'+esc(W.d.phone||"")+'" placeholder="+7 900 000-00-00"></label><label class="f">WhatsApp<input class="win" id="wwa" inputmode="tel" maxlength="24" value="'+esc(W.d.wa||"")+'" placeholder="+996 700 00 00 00"></label><label class="f">Telegram<input class="win" id="wtg" maxlength="40" value="'+esc(W.d.tg||"")+'" placeholder="@username"></label><label class="f">Атыңыз<input class="win" id="wnm" maxlength="40" value="'+esc(W.d.name||"")+'" placeholder="Мис: Азамат"></label><div class="err" id="we"></div><button class="wgo" data-wcontact>Улантуу</button>',
+ ()=>{const d=W.d;return '<h4 class="wq">Текшериңиз</h4><div class="wprev"><div class="status">'+esc(CAT[d.cat].nm)+' · '+esc(d.sub)+'</div><b>'+esc(d.title)+'</b>'+priceHtml(d)+'<div class="status">'+esc(d.city)+(d.area?', '+esc(d.area):'')+'</div><p>'+esc(d.text)+'</p><div class="status">'+[d.phone&&("📞 "+d.phone),d.wa&&("WhatsApp "+d.wa),d.tg&&("Telegram "+d.tg)].filter(Boolean).map(esc).join(" · ")+'</div></div><label class="check"><input type="checkbox" id="wkg"'+(d.forKg?" checked":"")+'> «Мекендештерге» белгисин кошуу</label><div class="err" id="we"></div><button class="wgo" id="wpub">Жарыяны жайгаштыруу</button><p class="whint">Жарыяңызды каалаган убакта Кабинеттен өчүрө аласыз.</p>'}
+];
+function wzDraw(){
+  const box=$("wz");if(!box)return;
+  const n=WSTEPS.length,s=W.step;
+  box.innerHTML='<div class="wpb" aria-hidden="true"><span style="width:'+Math.round((s+1)/n*100)+'%"></span></div>'+wzChips()+WSTEPS[s]()+(s>0?'<button class="wbk" data-wback>Артка</button>':'');
+  const f=box.querySelector("#wf");if(f&&s>=4&&matchMedia("(pointer:fine)").matches)f.focus();
+  const sh=box.closest(".sheet");if(sh)sh.scrollTop=0;
 }
-
-async function submitPost(e){
-  e.preventDefault();
-  const v=id=>$(id).value.trim();
-  const priceRaw=v("fprice").replace(/[\s ]/g,"");
-  const ad={cat:v("fcat"),sub:v("fsub"),title:v("ftitle"),text:v("ftext"),price:priceRaw?Number(priceRaw):null,cur:v("fcur"),per:v("fper"),city:v("fcity"),area:v("farea"),name:v("fname"),phone:v("fphone"),wa:v("fwa"),tg:v("ftg"),forKg:$("fkg").checked};
-  const err=$("ferr");
-  if(ad.title.length<5)return err.textContent="Аталышы жок же өтө кыска (5 тамгадан кем эмес).";
-  if(ad.text.length<10)return err.textContent="Толук маалыматты жазыңыз (10 тамгадан кем эмес).";
-  if(priceRaw&&!(ad.price>=0))return err.textContent="Баасына сан гана жазыңыз, мис.: 3500.";
-  if(!ad.phone&&!ad.wa&&!ad.tg)return err.textContent="Жок дегенде бир байланыш жазыңыз: телефон, WhatsApp же Telegram.";
-  err.textContent="";$("fsend").disabled=true;$("fsend").textContent="Жайгаштырылууда…";
+function wzNext(){W.step++;if(W.step===3&&!W.d.city)W.step=2;wzDraw()}
+function openPost(){
+  if(!W.d.cat&&S.cat){W.d.cat=S.cat;W.step=1}
+  if(!W.d.city&&S.city&&W.step===2){W.d.city=S.city}
+  openSheet('<div class="shead"><h3>Жарыя берүү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="wz"></div>');
+  setTab("post");wzDraw();
+}
+async function wzPublish(btn){
+  const d=W.d,er=$("we");d.forKg=$("wkg").checked;
+  const ad={cat:d.cat,sub:d.sub,title:d.title,text:d.text,price:d.price?Number(d.price):null,cur:d.cur||"RUB",per:d.per||"",city:d.city,area:d.area||"",name:d.name||"",phone:d.phone||"",wa:d.wa||"",tg:d.tg||"",forKg:!!d.forKg};
+  btn.disabled=true;btn.textContent="Жайгаштырылууда…";
   try{
     const saved=await api("/api/ads",{method:"POST",body:JSON.stringify(ad)});
-    S.ads.unshift(saved);
-    closeSheet();toast("Жарыя жайгаштырылды");
-    S.cat=ad.cat;S.sub=null;S.mine=false;render();
-  }catch(x){$("fsend").disabled=false;$("fsend").textContent="Жарыяны жайгаштыруу";err.textContent=(x&&x.message)||"Сакталган жок. Интернетти текшерип, кайра басыңыз."}
+    S.ads.unshift(saved);W.step=0;W.d={};W.allCities=false;
+    closeSheet();toast("Жарыя жайгаштырылды 🎉");S.cat=ad.cat;S.sub=null;S.mine=false;S.fav=false;render();toFeed();
+  }catch(x){btn.disabled=false;btn.textContent="Жарыяны жайгаштыруу";er.textContent=(x&&x.message)||"Сакталган жок. Интернетти текшерип, кайра басыңыз."}
 }
+document.addEventListener("click",e=>{
+  const b=e.target.closest("#wz button");if(!b)return;const d=W.d,ds=b.dataset;
+  if(ds.wcat){if(d.cat!==ds.wcat){d.sub=null;d.per=null}d.cat=ds.wcat;wzNext();return}
+  if(ds.wsub){d.sub=ds.wsub;wzNext();return}
+  if(ds.wallc!==undefined){W.allCities=true;wzDraw();return}
+  if(ds.wcity){if(d.city!==ds.wcity)d.area="";d.city=ds.wcity;wzNext();return}
+  if(ds.warea!==undefined){d.area=ds.warea;wzNext();return}
+  if(ds.wcur){d.cur=ds.wcur;const f=$("wf");d.price=f?f.value.replace(/[\s ]/g,""):d.price;wzDraw();return}
+  if(ds.wper){d.per=d.per===ds.wper?null:ds.wper;const f=$("wf");d.price=f?f.value.replace(/[\s ]/g,""):d.price;wzDraw();return}
+  if(ds.wskipprice!==undefined){d.price="";wzNext();return}
+  if(ds.wback!==undefined){W.step=Math.max(0,W.step-1);wzDraw();return}
+  if(ds.wnext){const k=ds.wnext,f=$("wf"),er=$("we");let val=f.value.trim();
+    if(k==="price"){val=val.replace(/[\s ]/g,"");if(val&&!/^\d+$/.test(val)){er.textContent="Баасына сан гана жазыңыз, мис: 3500";return}}
+    else if(val.length<+ds.min){er.textContent=k==="title"?"Аталышы 5 тамгадан кем эмес болсун.":"Бир аз толугураак жазыңыз (10 тамгадан ашык).";f.focus();return}
+    d[k]=val;wzNext();return}
+  if(ds.wcontact!==undefined){d.phone=$("wph").value.trim();d.wa=$("wwa").value.trim();d.tg=$("wtg").value.trim();d.name=$("wnm").value.trim();
+    if(!d.phone&&!d.wa&&!d.tg){$("we").textContent="Жок дегенде бир байланыш жазыңыз: телефон, WhatsApp же Telegram.";return}
+    const ph=d.phone||d.wa;if(ph&&ph.replace(/\D/g,"").length<9){$("we").textContent="Номерди толук жазыңыз, мис: +7 900 000-00-00";return}
+    wzNext();return}
+  if(b.id==="wpub"){wzPublish(b);return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="wf"&&e.target.tagName==="INPUT"){e.preventDefault();const g=document.querySelector("#wz .wgo");if(g)g.click()}});
 
 async function delAd(key){
   const a=S.ads.find(x=>x.id===key);if(!a)return;
