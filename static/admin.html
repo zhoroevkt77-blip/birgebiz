@@ -350,7 +350,7 @@ async function vNotice(){
   loading();let n;try{n=await (await fetch("/api/notice")).json()}catch(x){return fail({message:"Жүктөлгөн жок"})}
   $("main").innerHTML='<h1>Билдирүү</h1><p class="hint" style="margin:-6px 0 14px">Бул текст сайттын башкы бетинде, издөөнүн астында бардык колдонуучуларга көрүнөт. Колдонуучу ✕ басып жаба алат; жаңы текст жазсаңыз, кайра чыгат.</p>'
    +'<h2>Азыр</h2>'+(n.text?'<div class="nb '+esc(n.kind)+'">'+esc(n.text)+'</div>':'<div class="empty">Билдирүү жок</div>')
-   +'<h2>Жаңы билдирүү</h2><form class="form" id="nform"><label class="f">Текст<textarea class="in" id="ntext" maxlength="400" placeholder="Мис: 1-декабрдан тартып патенттин баасы өзгөрөт. Толук маалымат «Юридикалык кызмат» бөлүмүндө.">'+esc(n.text||"")+'</textarea></label>'
+   +'<h2>Жаңы билдирүү</h2><form class="form" id="nform"><label class="f">Текст<textarea class="in" id="ntext" maxlength="400" placeholder="Мис: 1-декабрдан тартып регистрациянын тартиби өзгөрөт. Толук маалымат «Юридикалык кызмат» бөлүмүндө.">'+esc(n.text||"")+'</textarea></label>'
    +'<label class="f">Түрү<select class="in" id="nkind"><option value="info">ℹ️ Маалымат (көк)</option><option value="warn">⚠️ Эскертүү (сары)</option><option value="good">✅ Жакшы кабар (жашыл)</option></select></label>'
    +'<div class="nb" id="nprev" hidden></div><div class="err" id="nerr"></div><button class="go" type="submit">Жарыялоо</button>'+(n.text?'<button class="btn bad" type="button" id="nclr">Билдирүүнү алып салуу</button>':'')+'</form>';
   $("nkind").value=n.kind||"info";
