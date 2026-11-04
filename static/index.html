@@ -813,7 +813,7 @@ async function openStats(){
   setTab("me");openSheet('<div class="shead"><h3>Статистика</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="statBox" class="mlist"><div class="status">Жүктөлүүдө…</div></div>');
   try{const st=await api("/api/admin/stats");const el=$("statBox");if(!el)return;
     const tile=(n,l)=>'<div class="fxrow"><span class="sym">'+n+'</span><span><b>'+l+'</b></span><span></span></div>';
-    el.innerHTML=tile(st.active,"Активдүү жарыя")+tile(st.today,"Акыркы 24 саатта")+tile(st.pending,"Төлөм күтүүдө")+tile(st.hidden,"Шикаят менен жашырылган")+tile(fmt(st.earned)+"₽","Тастыкталган төлөмдөр")
+    el.innerHTML=tile(st.active,"Активдүү жарыя")+tile(st.today,"Акыркы 24 саатта")+tile(st.pending,"Төлөм күтүүдө")+tile(st.hidden,"«Шектүү» деп жашырылган")+tile(fmt(st.earned)+"₽","Тастыкталган төлөмдөр")
       +'<h4 class="wq">Категориялар боюнча</h4>'+(st.by_cat.length?st.by_cat.map(x=>'<div class="fxrow"><span class="sym">'+x.n+'</span><span><b>'+esc(CAT[x.cat]?.nm||x.cat)+'</b></span><span></span></div>').join(""):'<div class="status">Азырынча жарыя жок</div>')
       +'<div class="note">Төлөм: '+(st.pay_enabled?'<b>күйгүзүлгөн</b>':'<b>өчүк</b> — Railway\'де PAY_INFO өзгөрмөсүнө реквизиттерди жазсаңыз күйөт')+'. Бекер лимит: '+st.free_limit+' жарыя.</div>';
   }catch(x){const el=$("statBox");if(el)el.innerHTML='<div class="err">'+esc(x.message)+'</div>'}
