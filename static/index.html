@@ -91,15 +91,16 @@ h2.sec{font-family:var(--display);font-size:24px;font-weight:900;letter-spacing:
 h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(--muted);font-size:13px}
 
 /* categories */
-.cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-@media (min-width:900px){.cats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.cati{position:relative;display:block;border:0;padding:0;background:none;border-radius:18px;line-height:0;transition:transform .15s ease}
-.cati img{width:100%;height:auto;display:block;border-radius:18px}
-.cati .cnt{position:absolute;right:8px;top:8px;line-height:1;background:rgba(0,0,0,.72);color:#fff;font-weight:900;font-size:13px;padding:5px 9px;border-radius:999px;font-variant-numeric:tabular-nums}
-.cati .cnt:empty{display:none}
-.cati:active{transform:scale(.97)}
-.cati[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:3px}
-.cati[aria-pressed="true"]::after{content:"✓";position:absolute;left:8px;top:8px;line-height:1;width:26px;height:26px;border-radius:50%;background:var(--sun);color:#000;font-weight:900;display:grid;place-items:center;font-size:15px}
+.cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:340px){.cats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){.cats{gap:12px}}
+.cati{position:relative;display:flex;flex-direction:column;aspect-ratio:1/1.22;border:0;padding:0;background:var(--cb);border-radius:16px;overflow:hidden;text-align:left;box-shadow:0 1px 0 rgba(0,0,0,.06),0 2px 8px rgba(20,30,60,.08);transition:transform .15s ease}
+.cati .cn{display:block;padding:8px 8px 0;font-weight:900;font-size:clamp(11.5px,3.2vw,15px);line-height:1.12;letter-spacing:-.3px;color:#0d1b2a;overflow-wrap:anywhere;hyphens:manual;min-height:2.24em}
+.cati img{display:block;flex:1;min-height:0;width:100%;height:auto;margin-top:4px;object-fit:cover;object-position:center 75%}
+.cati .cnt{position:absolute;right:6px;bottom:6px;min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#fff;color:#0d1b2a;font-weight:900;font-size:12px;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.18);font-variant-numeric:tabular-nums}
+.cati:active{transform:scale(.96)}
+.cati[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:2px}
+.cati[aria-pressed="true"]::after{content:"✓";position:absolute;left:6px;bottom:6px;width:24px;height:24px;border-radius:50%;background:var(--sun);color:#000;font-weight:900;display:grid;place-items:center;font-size:14px}
 @media (prefers-reduced-motion:reduce){.cati{transition:none}}
 .cat{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:104px;text-align:left;background:var(--c);color:#fff;border:0;border-radius:18px;padding:14px;transition:transform .15s ease}
 .cat .nm{font-weight:800;font-size:16px;line-height:1.2;letter-spacing:-.3px;max-width:78%;position:relative;z-index:1;text-wrap:balance}
@@ -359,6 +360,9 @@ const CATS=[
 const CAT=Object.fromEntries(CATS.map(c=>[c.id,c]));
 const CAT_ORDER=["job","jobseek","carsale","house","law","fin","cargo","ride","ticket","med","food","beauty","help","edu","auto","market"];
 const CIMG={job:[522,172],jobseek:[522,172],carsale:[522,172],house:[524,172],law:[523,162],fin:[523,162],cargo:[522,150],ride:[522,150],ticket:[520,141],med:[521,141],food:[516,148],beauty:[523,148],help:[524,162],edu:[520,162],auto:[524,182],market:[524,182]};
+const ILL={"job": ["#edf5fc", 300, 209], "jobseek": ["#e8f1f9", 300, 209], "carsale": ["#f0f8fd", 300, 235], "house": ["#eaf4fb", 300, 207], "law": ["#ece9fc", 240, 180], "cargo": ["#f1f8fe", 300, 237], "ride": ["#e4ebf3", 300, 212], "ticket": ["#e1f3ff", 240, 180], "med": ["#e1f3ff", 240, 180], "beauty": ["#ffe8ee", 240, 180], "food": ["#eeebfe", 240, 180], "edu": ["#e1f3ff", 240, 180], "auto": ["#e1f1fe", 240, 180], "market": ["#e5f9f0", 240, 180], "fin": ["#e3f4e6", 300, 225], "help": ["#fde7ee", 300, 225]};
+const SHORT={law:"Патент, юрист",fin:"Акча которуу",cargo:"Посылка, жүк",ticket:"Авиа, ж/д билет",help:"Жардам, колдоо",edu:"Билим, курстар"};
+const catCard=(id,n,attr)=>'<button class="cati" style="--cb:'+ILL[id][0]+'" '+attr+' aria-label="'+esc(CAT[id].nm)+(n!=null?', '+n+' жарыя':'')+'"><span class="cn">'+esc(SHORT[id]||CAT[id].nm)+'</span><img src="/static/ill/'+id+'.webp" alt="" width="'+ILL[id][1]+'" height="'+ILL[id][2]+'" loading="lazy" decoding="async">'+(n!=null?'<span class="cnt">'+n+'</span>':'')+'</button>';
 const CCOL={jobseek:["#1E6EEB","#D6E6FD"],carsale:["#C8102E","#FFD6DC"],job:["#B8700F","#FCE6BF"],house:["#178A66","#CFF2E4"],law:["#5148B5","#DEDBFC"],fin:["#3E7314","#DCEFC4"],cargo:["#D0532A","#FFDCCD"],ride:["#185FA5","#CFE3F8"],ticket:["#2C7FD1","#D9EAFB"],med:["#D63B3A","#FFD8D8"],beauty:["#C9467A","#FAD6E4"],food:["#8E3818","#F7D2C2"],edu:["#6A3FB5","#E5DAFB"],auto:["#44515E","#DCE3EA"],help:["#C8102E","#FFD6DC"],market:["#0E7C86","#CDEFF1"]};
 const WARN={
   law:"Патент же документ үчүн толук акчаны алдын ала которбоңуз. Расмий төлөм квитанцияны текшериңиз.",
@@ -405,7 +409,7 @@ function filtered(){
 }
 function renderCats(){
   const base=S.ads.filter(a=>!S.city||a.city===S.city);
-  $("cats").innerHTML=CAT_ORDER.map(id=>{const c=CAT[id],n=base.filter(a=>a.cat===id).length;return'<button class="cati" data-cat="'+id+'" aria-pressed="'+(S.cat===id)+'" aria-label="'+esc(c.nm)+', '+n+' жарыя"><img src="/static/cats/'+id+'.webp" alt="" width="'+CIMG[id][0]+'" height="'+CIMG[id][1]+'" loading="lazy" decoding="async"><span class="cnt">'+(n||"")+'</span></button>'}).join("");
+  $("cats").innerHTML=CAT_ORDER.map(id=>{const c=CAT[id],n=base.filter(a=>a.cat===id).length;return catCard(id,n,'data-cat="'+id+'" aria-pressed="'+(S.cat===id)+'"')}).join("");
   const c=S.cat&&CAT[S.cat];
   $("subs").innerHTML=c?['<button class="chip" data-sub="" aria-pressed="'+(!S.sub)+'">Баары</button>'].concat(c.subs.map(s=>'<button class="chip" data-sub="'+esc(s)+'" aria-pressed="'+(S.sub===s)+'">'+esc(s)+'</button>')).join(""):"";
   $("catHint").textContent=c?"Тандалды: "+c.nm:"Бирөөнү тандаңыз";
@@ -468,7 +472,7 @@ const W={step:0,d:{},allCities:false};
 const wzChips=()=>{const d=W.d,a=[];if(d.cat)a.push(CAT[d.cat].nm);if(d.sub)a.push(d.sub);if(d.city)a.push(d.city);if(d.area)a.push(d.area);else if(d.city&&W.step>3)a.push("📍 Бүт шаар");if(d.title)a.push(d.title.length>22?d.title.slice(0,22)+"…":d.title);if(d.price)a.push(fmt(d.price)+" "+(d.cur==="KGS"?"сом":"₽"));return a.length?'<div class="wchips">'+a.map(x=>'<span class="wchip">'+esc(x)+'</span>').join("")+'</div>':""};
 const wops=(list,key,sel)=>'<div class="wg">'+list.map(x=>'<button class="wop'+(sel===x?' on':'')+'" data-w'+key+'="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>';
 const WSTEPS=[
- ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="wcats">'+CAT_ORDER.map(id=>'<button class="wcat" data-wcat="'+id+'" aria-pressed="'+(W.d.cat===id)+'" aria-label="'+esc(CAT[id].nm)+'"><img src="/static/cats/'+id+'.webp" alt="" width="'+CIMG[id][0]+'" height="'+CIMG[id][1]+'"></button>').join("")+'</div>',
+ ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="cats">'+CAT_ORDER.map(id=>catCard(id,null,'data-wcat="'+id+'" aria-pressed="'+(W.d.cat===id)+'"')).join("")+'</div>',
  ()=>'<h4 class="wq">Кайсы түрү?</h4>'+wops(CAT[W.d.cat].subs,"sub",W.d.sub),
  ()=>{const list=W.allCities?CITIES:TOPC;return '<h4 class="wq">Кайсы шаарда?</h4>'+wops(list,"city",W.d.city)+(W.allCities?'':'<button class="wop wide" data-wallc>Башка шаарлар ('+(CITIES.length-TOPC.length)+') ›</button>')},
  ()=>{const ar=AREAS[W.d.city];return '<h4 class="wq">Району / метросу?</h4><button class="wop wide" data-warea="" style="margin:0 0 8px">📍 Бүт шаар боюнча</button>'+(ar?wops(ar,"area",W.d.area):'')+'<p class="whint" style="margin-top:12px">'+(ar?'Тизмеде жок болсо, өзүңүз жазыңыз:':'Каалосоңуз жазыңыз (мис: 5-мкр, Центр):')+'</p><input class="win" id="wf" maxlength="60" value="'+esc(W.d.area||"")+'" placeholder="Район же метро"><button class="wgo" data-wnext="area" data-min="0">Улантуу</button>'},
