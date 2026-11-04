@@ -178,6 +178,8 @@ label.f span.req{color:var(--red)}
 .wcats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .wcat{border:0;padding:0;background:none;border-radius:16px;line-height:0}
 .wcat img{width:100%;height:auto;border-radius:16px}
+.wcat{position:relative}
+.wcat[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:2px}
 .wcat:active,.wop:active{transform:scale(.97)}
 .win{display:block;width:100%;font:inherit;font-size:16px;border:2px solid var(--fg);border-radius:12px;padding:13px 14px;background:var(--surface);color:var(--fg);font-weight:500}
 .win::placeholder{color:#8a7d76;font-weight:400}
@@ -466,7 +468,7 @@ const W={step:0,d:{},allCities:false};
 const wzChips=()=>{const d=W.d,a=[];if(d.cat)a.push(CAT[d.cat].nm);if(d.sub)a.push(d.sub);if(d.city)a.push(d.city);if(d.area)a.push(d.area);else if(d.city&&W.step>3)a.push("📍 Бүт шаар");if(d.title)a.push(d.title.length>22?d.title.slice(0,22)+"…":d.title);if(d.price)a.push(fmt(d.price)+" "+(d.cur==="KGS"?"сом":"₽"));return a.length?'<div class="wchips">'+a.map(x=>'<span class="wchip">'+esc(x)+'</span>').join("")+'</div>':""};
 const wops=(list,key,sel)=>'<div class="wg">'+list.map(x=>'<button class="wop'+(sel===x?' on':'')+'" data-w'+key+'="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>';
 const WSTEPS=[
- ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="wcats">'+CAT_ORDER.map(id=>'<button class="wcat" data-wcat="'+id+'" aria-label="'+esc(CAT[id].nm)+'"><img src="/static/cats/'+id+'.webp" alt="" width="'+CIMG[id][0]+'" height="'+CIMG[id][1]+'"></button>').join("")+'</div>',
+ ()=>'<h4 class="wq">Эмне жарыя бересиз?</h4><div class="wcats">'+CAT_ORDER.map(id=>'<button class="wcat" data-wcat="'+id+'" aria-pressed="'+(W.d.cat===id)+'" aria-label="'+esc(CAT[id].nm)+'"><img src="/static/cats/'+id+'.webp" alt="" width="'+CIMG[id][0]+'" height="'+CIMG[id][1]+'"></button>').join("")+'</div>',
  ()=>'<h4 class="wq">Кайсы түрү?</h4>'+wops(CAT[W.d.cat].subs,"sub",W.d.sub),
  ()=>{const list=W.allCities?CITIES:TOPC;return '<h4 class="wq">Кайсы шаарда?</h4>'+wops(list,"city",W.d.city)+(W.allCities?'':'<button class="wop wide" data-wallc>Башка шаарлар ('+(CITIES.length-TOPC.length)+') ›</button>')},
  ()=>{const ar=AREAS[W.d.city];return '<h4 class="wq">Району / метросу?</h4><button class="wop wide" data-warea="" style="margin:0 0 8px">📍 Бүт шаар боюнча</button>'+(ar?wops(ar,"area",W.d.area):'')+'<p class="whint" style="margin-top:12px">'+(ar?'Тизмеде жок болсо, өзүңүз жазыңыз:':'Каалосоңуз жазыңыз (мис: 5-мкр, Центр):')+'</p><input class="win" id="wf" maxlength="60" value="'+esc(W.d.area||"")+'" placeholder="Район же метро"><button class="wgo" data-wnext="area" data-min="0">Улантуу</button>'},
@@ -485,8 +487,8 @@ function wzDraw(){
 }
 function wzNext(){W.step++;if(W.step===3&&!W.d.city)W.step=2;wzDraw()}
 function openPost(){
-  if(!W.d.cat&&S.cat){W.d.cat=S.cat;W.step=1}
-  if(!W.d.city&&S.city&&W.step===2){W.d.city=S.city}
+  W.step=0; // «Жарыя берүү» басылганда дайыма категория тандоодон башталат
+  if(!W.d.city&&S.city)W.d.city=S.city;
   openSheet('<div class="shead"><h3>Жарыя берүү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="wz"></div>');
   setTab("post");wzDraw();
 }
