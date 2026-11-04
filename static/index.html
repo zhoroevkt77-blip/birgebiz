@@ -63,6 +63,8 @@ header.compact .hrow{padding-block:8px}
 .fxbar .fx-m{flex:none;color:var(--red);font-weight:800;font-size:14px}
 .fxrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-variant-numeric:tabular-nums}
 .fxrow .sym{width:44px;height:44px;border-radius:12px;background:var(--red);color:var(--sun);display:grid;place-items:center;font-weight:900;font-size:20px}
+.stl{width:100%;text-align:left;font:inherit;color:inherit}
+.stl small{color:var(--red);font-weight:800}
 .fxrow b{display:block;font-size:17px;font-weight:900;letter-spacing:-.3px}
 .fxrow small{color:var(--muted);font-size:13px}
 .fxrow .val{text-align:right;font-weight:900;font-size:18px}
@@ -444,7 +446,7 @@ function filtered(){
   const q=S.q.trim().toLowerCase().replace(/ё/g,"е");
   const toks=q.split(/\s+/).filter(Boolean);
   const hit=a=>{if(!toks.length)return true;const h=[a.title,a.text,a.sub,a.area,a.city,a.name].join(" ").toLowerCase().replace(/ё/g,"е");return toks.every(w=>h.includes(w.length>5?w.slice(0,w.length-2):w))};
-  return S.ads.filter(a=>(!S.max||a.price==null||a.price<=S.max)&&(!S.forKg||a.forKg)&&hit(a)&&(!S.mine||a.mine)&&(!S.fav||isFav(a.id))&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||subsOf(a).includes(S.sub))&&true).sort((x,y)=>y.created-x.created);
+  return S.ads.filter(a=>(!S.adm||(S.adm==="hidden"?a.hidden:Date.now()-a.created<864e5))&&(!S.max||a.price==null||a.price<=S.max)&&(!S.forKg||a.forKg)&&hit(a)&&(!S.mine||a.mine)&&(!S.fav||isFav(a.id))&&(!S.city||a.city===S.city)&&(!S.area||a.area===S.area)&&(!S.cat||a.cat===S.cat)&&(!S.sub||subsOf(a).includes(S.sub))&&true).sort((x,y)=>y.created-x.created);
 }
 function renderCats(){
   const base=S.ads.filter(a=>!S.city||a.city===S.city);
@@ -456,7 +458,7 @@ function renderCats(){
 function renderFeed(){
   const list=filtered();
   $("total").textContent=fmt(S.ads.length);
-  let t=S.fav?"Тандалгандар":S.mine?"Менин жарыяларым":S.cat?CAT[S.cat].nm+(S.sub?" · "+S.sub:""):"Акыркы жарыялар";
+  let t=S.adm==="hidden"?"«Шектүү» деп жашырылгандар":S.adm==="today"?"Акыркы 24 саатта":S.fav?"Тандалгандар":S.mine?"Менин жарыяларым":S.cat?CAT[S.cat].nm+(S.sub?" · "+S.sub:""):"Акыркы жарыялар";
   if(S.city&&!S.mine&&!S.fav)t+=" — "+S.city+(S.area?", "+S.area:"");
   $("feedTitle").textContent=t;
   if(S.ready)$("status").textContent=list.length+" табылды";
@@ -631,7 +633,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.lcity!==undefined){closeSheet();setCity(t.dataset.lcity);if(S.city&&AREAS[S.city])openLoc();return}
   if(t.dataset.larea!==undefined){S.area=t.dataset.larea||null;closeSheet();render();return}
   if(t.dataset.c!==undefined){S.city=t.dataset.c||null;S.area=null;try{localStorage.setItem("bb_city",S.city||"")}catch(x){}render();return}
-  if(t.dataset.cat){S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;S.fav=false;setTab("home");render();return}
+  if(t.dataset.cat){S.adm=null;S.cat=S.cat===t.dataset.cat?null:t.dataset.cat;S.sub=null;S.mine=false;S.fav=false;setTab("home");render();return}
   if(t.dataset.sub!==undefined){S.sub=t.dataset.sub||null;render();return}
   if(t.dataset.ad){openDetail(t.dataset.ad);return}
   if(t.dataset.fav){const id=t.dataset.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[id].concat(S.favs);saveFavs();const on=isFav(id);t.setAttribute("aria-pressed",on);t.textContent=on?"❤️ Тандалганда":"🤍 Тандалганга кошуу";toast(on?"Тандалганга кошулду":"Тандалгандан алынды");renderFeed();return}
@@ -719,7 +721,7 @@ function smartSummary(p){const a=[];
   return a}
 function runSmart(raw){
   const p=smartParse(raw);
-  S.cat=p.cat;S.sub=p.sub;S.city=p.city;S.area=p.area;S.max=p.max;S.forKg=p.forKg;S.q=p.words.join(" ");S.mine=false;S.fav=false;S.smart=raw.trim()?p:null;
+  S.cat=p.cat;S.sub=p.sub;S.city=p.city;S.area=p.area;S.max=p.max;S.forKg=p.forKg;S.q=p.words.join(" ");S.mine=false;S.fav=false;S.adm=null;S.smart=raw.trim()?p:null;
   setTab("home");render();renderSmart();if(raw.trim())toFeed();
 }
 function renderSmart(){
@@ -733,7 +735,7 @@ function setTab(name){document.querySelectorAll(".tab[data-tab]").forEach(b=>{if
 function toFeed(){const f=$("feedTitle");if(f)f.scrollIntoView({behavior:"smooth",block:"start"})}
 function goTab(name){
   if(name==="post"){openPost();return}
-  if(name==="home"){closeSheet();S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";S.max=null;S.forKg=false;S.smart=null;$("q").value="";renderSmart();setTab("home");render();scrollTo({top:0,behavior:"smooth"});return}
+  if(name==="home"){closeSheet();S.adm=null;S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";S.max=null;S.forKg=false;S.smart=null;$("q").value="";renderSmart();setTab("home");render();scrollTo({top:0,behavior:"smooth"});return}
   if(name==="fav"){closeSheet();S.fav=true;S.mine=false;S.cat=S.sub=null;setTab("fav");render();toFeed();return}
   if(name==="mine"){S.mine=true;S.fav=false;S.cat=S.sub=null;setTab("me");render();toFeed();return}
   if(name==="help"){openHelp();return}
@@ -812,12 +814,17 @@ async function openPending(){
 async function openStats(){
   setTab("me");openSheet('<div class="shead"><h3>Статистика</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="statBox" class="mlist"><div class="status">Жүктөлүүдө…</div></div>');
   try{const st=await api("/api/admin/stats");const el=$("statBox");if(!el)return;
-    const tile=(n,l)=>'<div class="fxrow"><span class="sym">'+n+'</span><span><b>'+l+'</b></span><span></span></div>';
-    el.innerHTML=tile(st.active,"Активдүү жарыя")+tile(st.today,"Акыркы 24 саатта")+tile(st.pending,"Төлөм күтүүдө")+tile(st.hidden,"«Шектүү» деп жашырылган")+tile(fmt(st.earned)+"₽","Тастыкталган төлөмдөр")
-      +'<h4 class="wq">Категориялар боюнча</h4>'+(st.by_cat.length?st.by_cat.map(x=>'<div class="fxrow"><span class="sym">'+x.n+'</span><span><b>'+esc(CAT[x.cat]?.nm||x.cat)+'</b></span><span></span></div>').join(""):'<div class="status">Азырынча жарыя жок</div>')
+    const tile=(n,l,go)=>go?'<button class="fxrow stl" data-stgo="'+go+'"><span class="sym">'+n+'</span><span><b>'+l+'</b><small>Көрүү ›</small></span><span></span></button>':'<div class="fxrow"><span class="sym">'+n+'</span><span><b>'+l+'</b></span><span></span></div>';
+    el.innerHTML=tile(st.active,"Активдүү жарыя","all")+tile(st.today,"Акыркы 24 саатта","today")+tile(st.pending,"Төлөм күтүүдө","pending")+tile(st.hidden,"«Шектүү» деп жашырылган","hidden")+tile(fmt(st.earned)+"₽","Тастыкталган төлөмдөр")
+      +'<h4 class="wq">Категориялар боюнча</h4>'+(st.by_cat.length?st.by_cat.map(x=>'<button class="fxrow stl" data-stgo="cat:'+esc(x.cat)+'"><span class="sym">'+x.n+'</span><span><b>'+esc(CAT[x.cat]?.nm||x.cat)+'</b><small>Көрүү ›</small></span><span></span></button>').join(""):'<div class="status">Азырынча жарыя жок</div>')
       +'<div class="note">Төлөм: '+(st.pay_enabled?'<b>күйгүзүлгөн</b>':'<b>өчүк</b> — Railway\'де PAY_INFO өзгөрмөсүнө реквизиттерди жазсаңыз күйөт')+'. Бекер лимит: '+st.free_limit+' жарыя.</div>';
   }catch(x){const el=$("statBox");if(el)el.innerHTML='<div class="err">'+esc(x.message)+'</div>'}
 }
+document.addEventListener("click",e=>{const b=e.target.closest("[data-stgo]");if(!b)return;const g=b.dataset.stgo;
+  if(g==="pending"){openPending();return}
+  closeSheet();S.cat=S.sub=null;S.mine=false;S.fav=false;S.q="";S.max=null;S.forKg=false;S.smart=null;S.city=null;S.area=null;S.adm=null;$("q").value="";renderSmart();
+  if(g.startsWith("cat:"))S.cat=g.slice(4);else if(g!=="all")S.adm=g;
+  setTab("home");render();toFeed()});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-appr],[data-rej]");if(!b)return;const id=b.dataset.appr||b.dataset.rej,ok=!!b.dataset.appr;b.disabled=true;
   api("/api/ads/"+encodeURIComponent(id)+(ok?"/approve":"/reject"),{method:"POST"}).then(()=>{const c=$("pd-"+id);if(c)c.outerHTML='<div class="note">'+(ok?"✓ Тастыкталды, жарыя чыкты":"✕ Четке кагылды")+'</div>';toast(ok?"Тастыкталды":"Четке кагылды");load()},x=>{b.disabled=false;toast(x.message)})});
 $("home").onclick=()=>goTab("home");
