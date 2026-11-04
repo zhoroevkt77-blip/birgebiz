@@ -107,16 +107,16 @@ h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(
 /* categories */
 .cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media (min-width:900px){.cats{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
-.cati{position:relative;display:block;aspect-ratio:2.9/1;border:0;padding:0;background:#ddd;border-radius:999px/40%;overflow:hidden;text-align:left;box-shadow:0 2px 6px rgba(20,30,60,.18);transition:transform .15s ease}
+.cati{position:relative;display:block;aspect-ratio:3.5/1;border:0;padding:0;background:#e9eef7;border-radius:18px;overflow:hidden;text-align:left;box-shadow:0 2px 6px rgba(20,30,60,.18);transition:transform .15s ease}
 .cati img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center}
-.cati::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.08) 55%,transparent 75%)}
-.cati .cn{position:absolute;z-index:2;left:7%;top:50%;transform:translateY(-50%);white-space:nowrap;color:#fff;font-weight:900;font-size:clamp(12.5px,3.5vw,19px);line-height:1.08;letter-spacing:-.3px;text-shadow:0 1px 1px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.45);}
+.cati::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(255,255,255,.6),rgba(255,255,255,.35) 40%,transparent 58%)}
+.cati .cn{position:absolute;z-index:2;left:6%;top:50%;transform:translateY(-50%);white-space:nowrap;color:#13234a;font-weight:800;font-size:clamp(11.5px,3.05vw,18px);line-height:1.12;letter-spacing:-.3px;text-shadow:0 0 6px rgba(255,255,255,.9);}
 .cati .cnt{position:absolute;z-index:2;right:9%;top:8px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#fff;color:#0d1b2a;font-weight:900;font-size:11px;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.25);font-variant-numeric:tabular-nums}
 .cati .cnt[data-n="0"]{display:none}
 .cati:active{transform:scale(.97)}
 @media (max-width:899px){.cats>.cati:last-child:nth-child(odd){grid-column:1/-1;aspect-ratio:8.74/1}.cats>.cati:last-child:nth-child(odd) .cn br{display:none}.cats>.cati:last-child:nth-child(odd) .cn{font-size:clamp(14px,4.2vw,20px);left:5%}}
 .cati[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:2px}
-.cati[aria-pressed="true"] .cn::before{content:"✓ ";color:var(--sun)}
+.cati[aria-pressed="true"] .cn::before{content:"✓ ";color:#0b6fb8}
 @media (prefers-reduced-motion:reduce){.cati{transition:none}}
 .cat{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:104px;text-align:left;background:var(--c);color:#fff;border:0;border-radius:18px;padding:14px;transition:transform .15s ease}
 .cat .nm{font-weight:800;font-size:16px;line-height:1.2;letter-spacing:-.3px;max-width:78%;position:relative;z-index:1;text-wrap:balance}
@@ -407,8 +407,8 @@ const CAT_ORDER=["job","jobseek","carsale","house","law","repair","cargo","ride"
 const CIMG={job:[522,172],jobseek:[522,172],carsale:[522,172],house:[524,172],law:[523,162],fin:[523,162],cargo:[522,150],ride:[522,150],ticket:[520,141],med:[521,141],food:[516,148],beauty:[523,148],help:[524,162],edu:[520,162],auto:[524,182],market:[524,182]};
 const ILL={"job": ["#edf5fc", 300, 209], "jobseek": ["#e8f1f9", 300, 209], "carsale": ["#f0f8fd", 300, 235], "house": ["#eaf4fb", 300, 207], "law": ["#ece9fc", 240, 180], "cargo": ["#f1f8fe", 300, 237], "ride": ["#e4ebf3", 300, 212], "ticket": ["#e1f3ff", 240, 180], "med": ["#e1f3ff", 240, 180], "beauty": ["#ffe8ee", 240, 180], "food": ["#eeebfe", 240, 180], "edu": ["#e1f3ff", 240, 180], "auto": ["#e1f1fe", 240, 180], "market": ["#e5f9f0", 240, 180], "fin": ["#e3f4e6", 300, 225], "help": ["#fde7ee", 300, 225]};
 const SHORT={law:"Патент, юрист",fin:"Акча которуу",cargo:"Посылка, жүк",ticket:"Авиа, ж/д билет",help:"Жардам, колдоо",edu:"Билим, курстар"};
-const BANV={repair:4}; // сүрөт алмашканда номерин көбөйтүңүз
-const BAN={"repair":[515,146],"job": [522, 153], "jobseek": [517, 152], "carsale": [520, 148], "house": [515, 148], "law": [520, 145], "fin": [515, 146], "cargo": [520, 143], "ride": [515, 145], "ticket": [521, 128], "med": [514, 127], "food": [521, 121], "beauty": [515, 122], "help": [521, 117], "edu": [513, 116], "auto": [520, 136], "market": [513, 136]};
+const BANV=new Proxy({},{get:()=>5}); // сүрөттөр алмашканда номерин көбөйтүңүз // сүрөт алмашканда номерин көбөйтүңүз
+const BAN={"job":[522,146],"jobseek":[523,144],"carsale":[522,161],"house":[523,162],"law":[520,155],"repair":[522,155],"cargo":[520,154],"ride":[523,156],"ticket":[519,148],"med":[522,149],"food":[518,133],"beauty":[521,133],"help":[516,119],"edu":[518,120],"auto":[517,133],"market":[520,133]};
 const LBL={repair:"Оңдоо,|мастер",job:"Жумуш|берүү",jobseek:"Жумуш|издөө",carsale:"Автоунаа:|сатуу, алуу,|ижара",house:"Туракжай|ижара",law:"Юридикалык|кызмат",fin:"Акча которуу,|каржы",cargo:"Посылка /|жүк",ride:"Жүргүнчү|ташуу",ticket:"Авиакасса",med:"Медицина",food:"Тамак-аш,|кафе",beauty:"Сулуулук",help:"Кайрымдуулук,|колдоо",edu:"Билим жана|курстар",auto:"Авто|кызмат",market:"Барахолка"};
 const catCard=(id,n,attr)=>'<button class="cati" '+attr+' aria-label="'+esc(CAT[id].nm)+(n!=null?', '+n+' жарыя':'')+'"><img src="/static/ban/'+id+'.webp?v='+(BANV[id]||1)+'" alt="" width="'+BAN[id][0]+'" height="'+BAN[id][1]+'" loading="lazy" decoding="async"><span class="cn">'+(LBL[id]||CAT[id].nm).split("|").map(esc).join(" <br>")+'</span>'+(n!=null?'<span class="cnt" data-n="'+n+'">'+n+'</span>':'')+'</button>';
 const CCOL={jobseek:["#1E6EEB","#D6E6FD"],carsale:["#C8102E","#FFD6DC"],job:["#B8700F","#FCE6BF"],house:["#178A66","#CFF2E4"],law:["#5148B5","#DEDBFC"],fin:["#3E7314","#DCEFC4"],cargo:["#D0532A","#FFDCCD"],ride:["#185FA5","#CFE3F8"],ticket:["#2C7FD1","#D9EAFB"],med:["#D63B3A","#FFD8D8"],beauty:["#C9467A","#FAD6E4"],food:["#8E3818","#F7D2C2"],edu:["#6A3FB5","#E5DAFB"],auto:["#44515E","#DCE3EA"],help:["#C8102E","#FFD6DC"],market:["#0E7C86","#CDEFF1"]};
