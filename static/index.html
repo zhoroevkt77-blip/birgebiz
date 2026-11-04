@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>БИЗ БИРГЕБИЗ!</title>
 <meta name="description" content="Россиядагы кыргыз мекендештер жана мигранттар үчүн бекер жарыя тактасы: жумуш, койка-место, патент, посылка, билет.">
-<meta name="theme-color" content="#c8102e">
+<meta name="theme-color" content="#0b6fb8">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/static/icon-192.png">
@@ -13,18 +13,18 @@
 html{-webkit-text-size-adjust:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 /* Layout: sticky red header band → city strip → category grid → live feed; post/detail open in a bottom sheet */
 :root{
-  --bg:#f6f3ef; --surface:#ffffff; --sunk:#ece6df; --fg:#000000; --muted:#3f3633; --line:#ded5cc;
-  --red:#c8102e; --red-ink:#ffffff; --sun:#f5b301; --sun-ink:#3a2a00; --good:#1f7a4c; --warn:#a15c00;
+  --bg:#f2f6fa; --surface:#ffffff; --sunk:#e3ebf3; --fg:#000000; --muted:#34404c; --line:#d3deea;
+  --red:#0b6fb8; --red-ink:#ffffff; --sun:#ffc928; --sun-ink:#3a2a00; --good:#1f7a4c; --warn:#a15c00; --danger:#c8102e;
   --display:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --r:14px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#151110; --surface:#1f1917; --sunk:#2a2220; --fg:#f3ece7; --muted:#a8998f; --line:#3a302c;
-  --red:#e0384f; --red-ink:#ffffff; --sun:#f7c23c; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; color-scheme:dark}}
+  --bg:#0e1621; --surface:#16212e; --sunk:#1e2b3a; --fg:#eef3f8; --muted:#9fb1c3; --line:#2a3a4c;
+  --red:#3d9be3; --red-ink:#ffffff; --sun:#ffd04a; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; --danger:#ff5a6e; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#151110; --surface:#1f1917; --sunk:#2a2220; --fg:#f3ece7; --muted:#a8998f; --line:#3a302c;
-  --red:#e0384f; --red-ink:#ffffff; --sun:#f7c23c; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; color-scheme:dark}
+  --bg:#0e1621; --surface:#16212e; --sunk:#1e2b3a; --fg:#eef3f8; --muted:#9fb1c3; --line:#2a3a4c;
+  --red:#3d9be3; --red-ink:#ffffff; --sun:#ffd04a; --sun-ink:#2b1f00; --good:#4cc286; --warn:#e0a24a; --danger:#ff5a6e; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--red)}
@@ -60,10 +60,10 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .fxrow b{display:block;font-size:17px;font-weight:900;letter-spacing:-.3px}
 .fxrow small{color:var(--muted);font-size:13px}
 .fxrow .val{text-align:right;font-weight:900;font-size:18px}
-.up{color:#1f7a4c;font-size:12px;font-weight:700}.dn{color:var(--red);font-size:12px;font-weight:700}
+.up{color:#1f7a4c;font-size:12px;font-weight:700}.dn{color:var(--danger);font-size:12px;font-weight:700}
 .conv{background:var(--surface);border:2px solid var(--fg);border-radius:16px;padding:14px;display:grid;gap:10px}
 .conv .res{font-size:26px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
-.sb-x{margin-left:auto;border:0;background:none;font-weight:800;color:var(--red);padding:4px 2px}
+.sb-x{margin-left:auto;border:0;background:none;font-weight:800;color:var(--danger);padding:4px 2px}
 .search input:focus{outline:none}
 .search:focus-within{outline:3px solid var(--sun)}
 .btn{border:0;border-radius:999px;padding:11px 18px;font-weight:800;letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
@@ -147,7 +147,7 @@ h2.sec small{font-family:var(--body);letter-spacing:0;font-weight:600;color:var(
 @media (max-width:460px){.row2{grid-template-columns:1fr}}
 label.f{display:block;font-size:14px;font-weight:800;color:var(--fg);letter-spacing:-.2px}
 label.f>input,label.f>select,label.f>textarea{display:block;margin-top:6px}
-label.f span.req{color:var(--red)}
+label.f span.req{color:var(--danger)}
 .f input,.f select,.f textarea{font-size:16px;border:2px solid var(--fg);background:var(--surface);border-radius:12px;padding:12px 14px;font-weight:500;color:var(--fg);width:100%;min-width:0}
 .f input::placeholder,.f textarea::placeholder{color:#8a7d76;font-weight:400}
 .f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent)}
@@ -155,7 +155,7 @@ label.f span.req{color:var(--red)}
 .f textarea{min-height:96px;resize:vertical}
 .check{display:flex;gap:10px;align-items:center;font-size:14px}
 .check input{width:20px;height:20px;accent-color:var(--red)}
-.err{color:var(--red);font-size:14px;font-weight:500;min-height:1em}
+.err{color:var(--danger);font-size:14px;font-weight:500;min-height:1em}
 .detail p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:14px 0}
 .kv dt{color:var(--muted)}
@@ -218,11 +218,11 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .faq summary{font-weight:800;cursor:pointer;letter-spacing:-.2px}
 .faq p{margin:8px 0 0;color:var(--muted)}
 .favbtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 14px;font-weight:800}
-.favbtn[aria-pressed="true"]{border-color:var(--red);color:var(--red)}
+.favbtn[aria-pressed="true"]{border-color:var(--danger);color:var(--danger)}
 .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 footer{border-top:1px solid var(--line);padding-block:20px 32px;color:var(--muted);font-size:13px}
 footer p{margin:0 0 8px;max-width:70ch}
-.tag.hid{background:var(--red);color:var(--red-ink)}
+.tag.hid{background:var(--danger);color:var(--red-ink)}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 </style>
 </head>
