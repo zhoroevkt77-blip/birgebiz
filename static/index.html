@@ -68,6 +68,9 @@ header.compact .hrow{padding-block:8px}
 .fxrow .val{text-align:right;font-weight:900;font-size:18px}
 .up{color:#1f7a4c;font-size:12px;font-weight:700}.dn{color:var(--danger);font-size:12px;font-weight:700}
 .conv{background:var(--surface);border:2px solid var(--fg);border-radius:16px;padding:14px;display:grid;gap:10px}
+.conv .res small{display:block;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;margin-bottom:2px}
+.conv .res .cv-real{display:block;margin-top:6px;font-size:14px;font-weight:700;color:var(--warn);letter-spacing:-.1px}
+.fxbar .fx-v b{font-weight:900}
 .conv .res{font-size:26px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .sb-x{margin-left:auto;border:0;background:none;font-weight:800;color:var(--danger);padding:4px 2px}
 .search input:focus{outline:none}
@@ -738,20 +741,21 @@ function goTab(name){
   if(name==="stats"){openStats();return}
   if(name==="me"){openMe();return}
 }
-const FXN={USD:["$","АКШ доллары"],EUR:["€","Евро"],RUB:["₽","Орус рубли"],KZT:["₸","Казак теңгеси"],CNY:["¥","Кытай юаны"]};
+const FXN={USD:["$","АКШ доллары"],EUR:["€","Евро"],RUB:["₽","Орус рубли"],KZT:["₸","Казак теңгеси"]};
 let FX=null;
 const f2=(v,d)=>new Intl.NumberFormat("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
 async function loadFx(){try{FX=await api("/api/rates");renderFx()}catch(e){FX=null;$("fxBar").hidden=true}}
 function renderFx(){
   const b=$("fxBar");if(!FX||!FX.rates.USD){b.hidden=true;return}
   const R=FX.rates,part=(k,d)=>R[k]?FXN[k][0]+" "+f2(R[k].v,d):"";
-  b.innerHTML='<span class="fx-i" aria-hidden="true">₽</span><span class="fx-v">'+[part("USD",2),part("EUR",2),part("RUB",2)].filter(Boolean).join('<i>·</i>')+'</span><span class="fx-m">Курс ›</span>';
+  const rub=R.RUB?'<b>1000 ₽ = '+f2(R.RUB.v*1000,0)+' сом</b>':"";
+  b.innerHTML='<span class="fx-i" aria-hidden="true">₽</span><span class="fx-v">'+[rub,part("USD",2),part("EUR",2)].filter(Boolean).join('<i>·</i>')+'</span><span class="fx-m">Курс ›</span>';
   b.setAttribute("aria-label","Валюта курсу");b.hidden=false;
 }
 function openFx(){
   if(!FX)return;
   const R=FX.rates,d=FX.day.split("-").reverse().join(".");
-  const rows=Object.keys(FXN).filter(k=>R[k]).map(k=>{const x=R[k],dg=k==="KZT"?4:2;
+  const rows=Object.keys(FXN).filter(k=>R[k]).map(k=>{const x=R[k],dg=(k==="KZT"||k==="RUB")?4:2;
     const ch=x.d==null||Math.abs(x.d)<0.00005?'':(x.d>0?'<span class="up">▲ '+f2(x.d,dg)+'</span>':'<span class="dn">▼ '+f2(-x.d,dg)+'</span>');
     return '<div class="fxrow"><span class="sym">'+FXN[k][0]+'</span><span><b>'+FXN[k][1]+'</b><small>1 '+k+'</small></span><span class="val">'+f2(x.v,dg)+' сом<br>'+ch+'</span></div>'}).join("");
   openSheet('<div class="shead"><div><div class="status">КР Улуттук банкы · '+esc(d)+'</div><h3>Валюта курсу</h3></div><button class="x" data-close aria-label="Жабуу">✕</button></div>'
@@ -760,9 +764,11 @@ function openFx(){
    +'<label class="f">Багыты<select id="cvD"><option value="to">→ сомго</option><option value="from">сомдон →</option></select></label></div>'
    +'<div class="res" id="cvR"></div></div>'
    +'<div class="mlist" style="margin-top:12px">'+rows+'</div>'
-   +'<div class="note warn">Бул расмий курс. Банктардын жана акча которуу сервистеринин курсу бир аз башкача болушу мүмкүн.</div>');
+   +'<div class="note warn">Бул КР Улуттук банкынын расмий курсу. Акча которгондо сервистин өз курсу жана комиссиясы колдонулат — которордон мурун сурап алыңыз.</div>');
   const calc=()=>{const a=parseFloat(($("cvA").value||"0").replace(/\s/g,"").replace(",","."))||0,k=$("cvC").value,v=R[k].v,to=$("cvD").value==="to";
-    $("cvR").textContent=to?f2(a,0)+" "+FXN[k][0]+" = "+f2(a*v,2)+" сом":f2(a,0)+" сом = "+f2(a/v,2)+" "+FXN[k][0]};
+    const res=to?f2(a*v,0)+" сом":f2(a/v,2)+" "+FXN[k][0];
+    $("cvR").innerHTML='<small>Расмий курс боюнча:</small>'+esc(to?f2(a,0)+" "+FXN[k][0]:f2(a,0)+" сом")+' ≈ '+esc(res)
+      +(to&&k==="RUB"?'<span class="cv-real">Которуу сервистери адатта 1–3% азыраак берет: ≈ '+esc(f2(a*v*0.97,0))+' – '+esc(f2(a*v*0.99,0))+' сом</span>':'')};
   ["cvA","cvC","cvD"].forEach(id=>$(id).addEventListener("input",calc));calc();
 }
 function openHelp(){
