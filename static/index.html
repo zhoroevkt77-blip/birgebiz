@@ -868,15 +868,13 @@ function openMe(){
    +'<button class="mrow" data-go="post"><span class="mi">'+MI.mega+'</span><span>Жарыя берүү<small>Алгачкы 10 жарыя бекер</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="fav"><span class="mi">'+MI.heart+'</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="help"><span class="mi">'+MI.help+'</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
-   +(S.admin?'<a class="mrow" href="/admin" style="text-decoration:none;color:inherit"><span class="mi">'+MI.mega+'</span><span>🛠 Админ панель<small>Статистика, модерация, колдонуучулар</small></span><span class="chev">›</span></a><button class="mrow" data-go="pending"><span class="mi">'+MI.list+'</span><span>Төлөмдөрдү текшерүү<small id="mePend">…</small></span><span class="chev">›</span></button>'
-     +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
-     +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
+   +(S.admin?'<a class="mrow" href="/admin" style="text-decoration:none;color:inherit"><span class="mi">'+MI.mega+'</span><span>🛠 Админ панель<small>Статистика, модерация, колдонуучулар</small></span><span class="chev">›</span></a>'+'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="note" id="meFree" hidden></div>'
    +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'+(S.admin?'<button class="wbk" data-admlogin style="font-size:14px;margin-bottom:8px">🔓 Модератор режиминен чыгуу</button>':'')
    +'</div>');
   let c=null;try{c=JSON.parse(localStorage.getItem("bb_contact")||"null")}catch(e){}
   if(c){api("/api/quote?"+new URLSearchParams(Object.assign({cat:"job",sub:""},c))).then(q=>{const el=$("meFree");if(!el)return;el.hidden=false;el.innerHTML=q.pay_enabled?(q.free_left>0?'🎁 Бекер жарыялар: <b>'+q.free_left+' / '+q.free_limit+'</b> калды':'Бекер '+q.free_limit+' жарыяңыз колдонулду. Жумуш издөө жана Кайрымдуулук дайыма бекер.'):'🎁 Азырынча бардык жарыялар бекер. Бекер лимит: <b>'+q.free_left+' / '+q.free_limit+'</b>'}).catch(()=>{})}
-  if(S.admin)api("/api/admin/stats").then(st=>{const el=$("mePend");if(el)el.textContent=st.pending+" чек күтүүдө"}).catch(()=>{});
+
 }
 async function openPending(){
   setTab("me");openSheet('<div class="shead"><h3>Төлөмдөрдү текшерүү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="pendList" class="mlist"><div class="status">Жүктөлүүдө…</div></div>');
