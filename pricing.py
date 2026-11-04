@@ -79,6 +79,24 @@ def contact_key(phone: str, wa: str, tg: str) -> str:
 MAX_RECEIPT_BYTES = 1_200_000
 
 
+def parse_image(data_url: str, max_bytes: int, what: str = "Сүрөт"):
+    """'data:image/jpeg;base64,...' → (bytes, mime). Ката болсо ValueError."""
+    m = re.match(r"^data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=\s]+)$", data_url or "")
+    if not m:
+        raise ValueError(f"{what} туура эмес. JPG же PNG сүрөт жүктөңүз.")
+    raw = base64.b64decode(m.group(2), validate=False)
+    if len(raw) > max_bytes:
+        raise ValueError(f"{what} өтө чоң. Кайра жүктөп көрүңүз.")
+    if len(raw) < 500:
+        raise ValueError(f"{what} бош. Кайра тандаңыз.")
+    return raw, m.group(1)
+
+
+MAX_PHOTOS = 5
+MAX_PHOTO_BYTES = 700_000
+MAX_THUMB_BYTES = 120_000
+
+
 def parse_receipt(data_url: str):
     """'data:image/jpeg;base64,...' → (bytes, mime). Ката болсо ValueError."""
     m = re.match(r"^data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=\s]+)$", data_url or "")

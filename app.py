@@ -17,14 +17,15 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel, Field, field_validator
 
 import pricing
-from pricing import FREE_LIMIT, contact_key, fee_for, parse_receipt
+from pricing import (FREE_LIMIT, MAX_PHOTO_BYTES, MAX_PHOTOS, MAX_THUMB_BYTES, contact_key,
+                     fee_for, parse_image, parse_receipt)
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
@@ -81,6 +82,24 @@ ALTER TABLE ads ADD COLUMN IF NOT EXISTS receipt BYTEA;
 ALTER TABLE ads ADD COLUMN IF NOT EXISTS receipt_type TEXT;
 ALTER TABLE ads ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS ads_status_idx ON ads (status);
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS thumb BYTEA;
+CREATE TABLE IF NOT EXISTS ad_photos (
+    ad_id  TEXT NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+    idx    INT NOT NULL,
+    data   BYTEA NOT NULL,
+    mime   TEXT NOT NULL,
+    PRIMARY KEY (ad_id, idx)
+);
+CREATE TABLE IF NOT EXISTS fx_services (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    rate        DOUBLE PRECISION NOT NULL,
+    fee         TEXT NOT NULL DEFAULT '',
+    note        TEXT NOT NULL DEFAULT '',
+    contact     TEXT NOT NULL DEFAULT '',
+    sort        INT NOT NULL DEFAULT 0,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS free_usage (
     contact_key TEXT PRIMARY KEY,
     used        INT NOT NULL DEFAULT 0
@@ -93,6 +112,10 @@ CREATE TABLE IF NOT EXISTS reports (
 """
 
 pool: AsyncConnectionPool | None = None
+
+# Тизмеге керектүү мамычалар (сүрөт жана чек сыяктуу оор маалыматсыз)
+AD_COLS = ("id, owner_hash, cat, sub, title, body, price, cur, per, city, area, name, phone, wa, tg, "
+           "for_kg, reports, hidden, created_at, status, fee")
 
 
 def h(value: str) -> str:
@@ -156,6 +179,8 @@ class AdIn(BaseModel):
     tg: str = Field(default="", max_length=40)
     forKg: bool = False
     receipt: str | None = Field(default=None, max_length=1_700_000)
+    photos: list[str] = Field(default_factory=list, max_length=MAX_PHOTOS)
+    thumb: str | None = Field(default=None, max_length=170_000)
 
     @field_validator("cat")
     @classmethod
@@ -184,6 +209,8 @@ def to_json(row: dict, owner_hash: str | None, admin: bool) -> dict:
         "created": int(row["created_at"].timestamp() * 1000),
         "mine": owner_hash is not None and row["owner_hash"] == owner_hash,
         "status": row.get("status") or "active",
+        "photos": int(row.get("nphotos") or 0),
+        "thumb": bool(row.get("has_thumb")),
     }
     if out["mine"] or admin:
         out["fee"] = row.get("fee") or 0
@@ -280,7 +307,9 @@ async def list_ads(x_owner_token: str | None = Header(default=None),
     owner_hash = h(x_owner_token) if x_owner_token else None
     async with db().connection() as conn:
         cur = await conn.execute(
-            f"""SELECT * FROM ads
+            f"""SELECT {AD_COLS}, (thumb IS NOT NULL) AS has_thumb,
+                       (SELECT count(*) FROM ad_photos p WHERE p.ad_id = ads.id) AS nphotos
+                FROM ads
                 WHERE created_at > now() - interval '{AD_LIFETIME_DAYS} days'
                   AND ((status = 'active' AND NOT hidden) OR owner_hash = %s
                        OR (%s AND status = 'active'))
@@ -311,6 +340,11 @@ async def create_ad(ad: AdIn, request: Request,
             (owner_hash,))
         if (await cur.fetchone())["n"] >= MAX_ACTIVE_PER_OWNER:
             raise HTTPException(429, f"Бир адамга {MAX_ACTIVE_PER_OWNER} жарыяга чейин. Эскилерин өчүрүңүз.")
+        try:
+            photos = [parse_image(x, MAX_PHOTO_BYTES, "Сүрөт") for x in ad.photos[:MAX_PHOTOS]]
+            thumb = parse_image(ad.thumb, MAX_THUMB_BYTES, "Кичине сүрөт")[0] if (ad.thumb and photos) else None
+        except ValueError as e:
+            raise HTTPException(422, str(e))
         fee = fee_for(ad.cat, ad.sub)
         key = contact_key(ad.phone, ad.wa, ad.tg)
         status, charged, receipt, rtype = "active", 0, None, None
@@ -333,12 +367,17 @@ async def create_ad(ad: AdIn, request: Request,
             cur = await conn.execute(
                 """INSERT INTO ads (id, owner_hash, ip_hash, cat, sub, title, body, price, cur, per,
                                     city, area, name, phone, wa, tg, for_kg, status, fee, contact_key,
-                                    receipt, receipt_type)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
+                                    receipt, receipt_type, thumb)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   RETURNING """ + AD_COLS + ", (thumb IS NOT NULL) AS has_thumb",
                 (ad_id, owner_hash, ip_hash, ad.cat, ad.sub, ad.title, ad.text, ad.price, ad.cur,
                  ad.per, ad.city, ad.area, ad.name, ad.phone, ad.wa, ad.tg, ad.forKg, status, charged, key,
-                 receipt, rtype))
-            row = await cur.fetchone()
+                 receipt, rtype, thumb))
+            row = dict(await cur.fetchone())
+            for i, (data, mime) in enumerate(photos):
+                await conn.execute("INSERT INTO ad_photos (ad_id, idx, data, mime) VALUES (%s,%s,%s,%s)",
+                                   (ad_id, i, data, mime))
+            row["nphotos"] = len(photos)
         left = max(0, FREE_LIMIT - await free_used(conn, key)) if key else FREE_LIMIT
     out = to_json(row, owner_hash, False)
     out["free_left"] = left
@@ -386,6 +425,82 @@ async def unhide_ad(ad_id: str, x_admin_token: str | None = Header(default=None)
     return {"ok": True}
 
 
+# ── Жарыянын сүрөттөрү ──
+IMG_CACHE = {"Cache-Control": "public, max-age=2592000, immutable"}
+
+
+@app.get("/api/ads/{ad_id}/thumb")
+async def ad_thumb(ad_id: str):
+    async with db().connection() as conn:
+        cur = await conn.execute("SELECT thumb FROM ads WHERE id=%s AND thumb IS NOT NULL", (ad_id,))
+        row = await cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Сүрөт жок.")
+    return Response(bytes(row["thumb"]), media_type="image/jpeg", headers=IMG_CACHE)
+
+
+@app.get("/api/ads/{ad_id}/photo/{idx}")
+async def ad_photo(ad_id: str, idx: int):
+    async with db().connection() as conn:
+        cur = await conn.execute("SELECT data, mime FROM ad_photos WHERE ad_id=%s AND idx=%s", (ad_id, idx))
+        row = await cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Сүрөт жок.")
+    return Response(bytes(row["data"]), media_type=row["mime"], headers=IMG_CACHE)
+
+
+# ── Которуу сервистеринин курсу (админ толтурат) ──
+class FxSvcIn(BaseModel):
+    id: str | None = Field(default=None, max_length=20)
+    name: str = Field(min_length=2, max_length=40)
+    rate: float = Field(gt=0.2, lt=5)          # 1 ₽ = канча сом
+    fee: str = Field(default="", max_length=60)
+    note: str = Field(default="", max_length=120)
+    contact: str = Field(default="", max_length=80)
+    sort: int = Field(default=0, ge=-1000, le=1000)
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+
+def svc_json(r):
+    return {"id": r["id"], "name": r["name"], "rate": r["rate"], "fee": r["fee"], "note": r["note"],
+            "contact": r["contact"], "sort": r["sort"], "updated": int(r["updated_at"].timestamp() * 1000)}
+
+
+@app.get("/api/fxsvc")
+async def fxsvc_list():
+    async with db().connection() as conn:
+        cur = await conn.execute("SELECT * FROM fx_services ORDER BY sort DESC, rate DESC")
+        rows = await cur.fetchall()
+    return {"items": [svc_json(r) for r in rows]}
+
+
+@app.post("/api/fxsvc")
+async def fxsvc_save(svc: FxSvcIn, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    sid = svc.id or ("s" + secrets.token_hex(4))
+    async with db().connection() as conn:
+        cur = await conn.execute(
+            """INSERT INTO fx_services (id, name, rate, fee, note, contact, sort, updated_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s, now())
+               ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, rate=EXCLUDED.rate, fee=EXCLUDED.fee,
+                   note=EXCLUDED.note, contact=EXCLUDED.contact, sort=EXCLUDED.sort, updated_at=now()
+               RETURNING *""", (sid, svc.name, svc.rate, svc.fee, svc.note, svc.contact, svc.sort))
+        row = await cur.fetchone()
+    return svc_json(row)
+
+
+@app.delete("/api/fxsvc/{sid}")
+async def fxsvc_delete(sid: str, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        await conn.execute("DELETE FROM fx_services WHERE id=%s", (sid,))
+    return {"ok": True}
+
+
 # ── Админ: төлөмдөрдү текшерүү жана статистика ──
 def need_admin(tok):
     if not is_admin(tok):
@@ -396,7 +511,9 @@ def need_admin(tok):
 async def admin_pending(x_admin_token: str | None = Header(default=None)):
     need_admin(x_admin_token)
     async with db().connection() as conn:
-        cur = await conn.execute("SELECT * FROM ads WHERE status='pending' ORDER BY created_at ASC LIMIT 100")
+        cur = await conn.execute(f"""SELECT {AD_COLS}, receipt, receipt_type, (thumb IS NOT NULL) AS has_thumb,
+            (SELECT count(*) FROM ad_photos p WHERE p.ad_id = ads.id) AS nphotos
+            FROM ads WHERE status='pending' ORDER BY created_at ASC LIMIT 100""")
         rows = await cur.fetchall()
     out = []
     for r in rows:
