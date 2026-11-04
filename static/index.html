@@ -408,7 +408,7 @@ function priceHtml(a){if(a.price==null||a.price==="")return'<span class="price">
 const S={ads:[],city:null,area:null,cat:null,sub:null,q:"",mine:false,fav:false,max:null,forKg:false,smart:null,favs:[],ready:false,offline:false,admin:false,token:"",adminTok:""};
 function rnd(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
 try{S.token=localStorage.getItem("bb_token")||"";if(!S.token){S.token=rnd();localStorage.setItem("bb_token",S.token)}}catch(e){S.token=S.token||rnd()}
-try{const u=new URL(location.href),a=u.searchParams.get("admin");if(a!==null){a?localStorage.setItem("bb_admin",a):localStorage.removeItem("bb_admin");u.searchParams.delete("admin");history.replaceState(null,"",u.pathname+u.search+u.hash)}S.adminTok=localStorage.getItem("bb_admin")||""}catch(e){}
+try{const u=new URL(location.href),a=u.searchParams.get("admin");if(a!==null){const t=a.trim();t?localStorage.setItem("bb_admin",t):localStorage.removeItem("bb_admin");S.adminTry=t?"in":"out";u.searchParams.delete("admin");history.replaceState(null,"",u.pathname+u.search+u.hash)}S.adminTok=localStorage.getItem("bb_admin")||""}catch(e){}
 try{S.favs=JSON.parse(localStorage.getItem("bb_favs")||"[]")}catch(e){S.favs=[]}
 function saveFavs(){try{localStorage.setItem("bb_favs",JSON.stringify(S.favs))}catch(e){}}
 const isFav=id=>S.favs.includes(id);
@@ -794,7 +794,7 @@ function openMe(){
      +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
      +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="note" id="meFree" hidden></div>'
-   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'
+   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div><button class="wsk" data-admlogin style="font-size:13px;color:var(--muted)">🔐 Модератор кирүүсү</button>'
    +'</div>');
   let c=null;try{c=JSON.parse(localStorage.getItem("bb_contact")||"null")}catch(e){}
   if(c){api("/api/quote?"+new URLSearchParams(Object.assign({cat:"job",sub:""},c))).then(q=>{const el=$("meFree");if(!el)return;el.hidden=false;el.innerHTML=q.pay_enabled?(q.free_left>0?'🎁 Бекер жарыялар: <b>'+q.free_left+' / '+q.free_limit+'</b> калды':'Бекер '+q.free_limit+' жарыяңыз колдонулду. Жумуш издөө жана Кайрымдуулук дайыма бекер.'):'🎁 Азырынча бардык жарыялар бекер. Бекер лимит: <b>'+q.free_left+' / '+q.free_limit+'</b>'}).catch(()=>{})}
@@ -831,10 +831,30 @@ $("areaSel").addEventListener("change",e=>{S.area=e.target.value||null;renderLoc
 
 render();
 
+let adminChecked=false;
+function adminFeedback(){
+  if(adminChecked||!S.adminTry)return;adminChecked=true;
+  if(S.adminTry==="out"){toast("Модератор режиминен чыктыңыз");return}
+  if(S.admin)toast("✅ Модератор режими күйдү");
+  else{try{localStorage.removeItem("bb_admin")}catch(e){}S.adminTok="";
+    openSheet('<div class="shead"><h3>Токен туура эмес</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><p>Жазган токениңиз Railway\'деги <b>ADMIN_TOKEN</b> менен дал келген жок.</p><p class="whint">Railway → web → Variables → ADMIN_TOKEN → 👁 басып, маанисин көчүрүп алыңыз да, төмөнкү талаага коюңуз.</p>'+adminForm())}
+}
+function adminForm(){return '<label class="f">Модератор токени<input class="win" id="admTok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Railway\'деги ADMIN_TOKEN"></label><div class="err" id="admErr"></div><button class="wgo" id="admGo">Кирүү</button>'}
+function openAdminLogin(){openSheet('<div class="shead"><h3>Модератор кирүүсү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div>'+(S.admin?'<p>Сиз азыр модератор режиминдесиз.</p><button class="wbk" id="admOut">Модератор режиминен чыгуу</button>':'<p class="whint">Railway → web → Variables → ADMIN_TOKEN маанисин көчүрүп, бул жерге коюңуз.</p>'+adminForm()))}
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("#admGo,#admOut,[data-admlogin]");if(!b)return;
+  if(b.dataset.admlogin!==undefined){openAdminLogin();return}
+  if(b.id==="admOut"){try{localStorage.removeItem("bb_admin")}catch(x){}S.adminTok="";S.admin=false;closeSheet();toast("Модератор режиминен чыктыңыз");load();return}
+  const t=($("admTok").value||"").trim();if(!t){$("admErr").textContent="Токенди жазыңыз.";return}
+  b.disabled=true;b.textContent="Текшерилүүдө…";S.adminTok=t;
+  try{const j=await api("/api/ads");if(j.admin){try{localStorage.setItem("bb_admin",t)}catch(x){}S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=true;closeSheet();render();toast("✅ Модератор режими күйдү");openMe()}
+    else{S.adminTok="";b.disabled=false;b.textContent="Кирүү";$("admErr").textContent="Токен туура эмес. Railway\'деги ADMIN_TOKEN менен так салыштырыңыз (бош орун, чоң-кичине тамга)."}}
+  catch(x){S.adminTok="";b.disabled=false;b.textContent="Кирүү";$("admErr").textContent=x.message}
+});
 async function load(){
   try{const j=await api("/api/ads");S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=!!j.admin;S.offline=false}
   catch(x){S.err=x&&x.message;S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
-  S.ready=true;render();
+  S.ready=true;render();adminFeedback();
 }
 load();
 loadFx();setInterval(loadFx,30*60000);
