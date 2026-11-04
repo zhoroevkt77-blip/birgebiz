@@ -623,7 +623,8 @@ async def admin_stats(x_admin_token: str | None = Header(default=None)):
         cur = await conn.execute(f"""SELECT city, count(*) AS n FROM ads WHERE status='active' AND NOT hidden
             AND {LIVE} GROUP BY city ORDER BY n DESC LIMIT 15""")
         st["by_city"] = await cur.fetchall()
-    return {**st, "pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT}
+    return {**st, "pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT,
+            "backup_enabled": bool(os.environ.get("BACKUP_BOT_TOKEN"))}
 
 
 ADMIN_FILTERS = {

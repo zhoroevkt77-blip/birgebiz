@@ -203,7 +203,9 @@ async function vStats(){
   S.counts={hidden:s.hidden,pending:s.pending};renderTabs();
   const T=(l,v,go,cls)=>(go?'<button class="tile'+(cls?' '+cls:'')+'" data-go="'+go+'">':'<div class="tile'+(cls?' '+cls:'')+'">')+'<div class="l">'+l+'</div><div class="v">'+v+'</div>'+(go?'</button>':'</div>');
   const mx=Math.max(1,...s.by_cat.map(x=>x.n)),mc=Math.max(1,...s.by_city.map(x=>x.n));
-  $("main").innerHTML='<h1>Статистика</h1><div class="tiles">'
+  $("main").innerHTML='<h1>Статистика</h1>'
+   +(s.pay_enabled&&!s.backup_enabled?'<div class="nb warn" style="margin-bottom:14px">⚠️ <b>Акы алуу күйдү, бирок базанын көчүрмөсү жок.</b> Төлөгөн жарыялар жана чектер жоголуп кетпеши үчүн көчүрмө жасатыңыз (күн сайын Telegram\'га келүүчү backup).</div>':'')
+   +'<div class="tiles">'
    +T("Жалпы жарыя",fmt(s.total),"ads:all")+T("Активдүү",fmt(s.active),"ads:active")
    +T("Бүгүн коюлду",fmt(s.today),"ads:today")+T("Мөөнөтү бүткөн",fmt(s.expired),"ads:expired")
    +T("⚠️ Шектүү",fmt(s.hidden),"mod",s.hidden?"alert":"")+T("Жалпы көрүү",fmt(s.views))
