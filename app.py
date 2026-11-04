@@ -40,7 +40,7 @@ AD_LIFETIME_DAYS = 60      # жарыя ушунча күндөн кийин т�
 
 CATS = {
     "job", "jobseek", "carsale", "house", "law", "fin", "cargo", "ride", "ticket", "med",
-    "beauty", "food", "edu", "auto", "help", "market", "repair", "sim",
+    "beauty", "food", "edu", "auto", "help", "market", "repair",
 }
 
 SCHEMA = """

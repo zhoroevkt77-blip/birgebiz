@@ -13,7 +13,7 @@ FREE_LIMIT = 10
 # Деңгээлдер (₽)
 FREE_CATS = {"help", "jobseek"}
 TIER_200 = {"law", "fin", "ticket", "med", "auto", "carsale"}
-TIER_100 = {"job", "house", "cargo", "ride", "food", "beauty", "edu", "repair", "sim"}
+TIER_100 = {"job", "house", "cargo", "ride", "food", "beauty", "edu", "repair"}
 TIER_50 = {"market"}
 
 # Категориянын ичиндеги арзаныраак түрлөр (жеке адамдардын бир жолку жарыялары)
