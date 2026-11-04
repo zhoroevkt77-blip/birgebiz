@@ -794,7 +794,7 @@ function openMe(){
      +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
      +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="note" id="meFree" hidden></div>'
-   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div><button class="wsk" data-admlogin style="font-size:13px;color:var(--muted)">🔐 Модератор кирүүсү</button>'
+   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div><button class="wbk" data-admlogin style="font-size:14px;margin-bottom:8px">'+(S.admin?'🔓 Модератор режиминен чыгуу':'🔐 Модератор кирүүсү')+'</button>'
    +'</div>');
   let c=null;try{c=JSON.parse(localStorage.getItem("bb_contact")||"null")}catch(e){}
   if(c){api("/api/quote?"+new URLSearchParams(Object.assign({cat:"job",sub:""},c))).then(q=>{const el=$("meFree");if(!el)return;el.hidden=false;el.innerHTML=q.pay_enabled?(q.free_left>0?'🎁 Бекер жарыялар: <b>'+q.free_left+' / '+q.free_limit+'</b> калды':'Бекер '+q.free_limit+' жарыяңыз колдонулду. Жумуш издөө жана Кайрымдуулук дайыма бекер.'):'🎁 Азырынча бардык жарыялар бекер. Бекер лимит: <b>'+q.free_left+' / '+q.free_limit+'</b>'}).catch(()=>{})}
