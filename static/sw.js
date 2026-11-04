@@ -1,5 +1,5 @@
 // БИЗ БИРГЕБИЗ! service worker: барак офлайн ачылат, жарыялар дайыма серверден алынат.
-const CACHE = "birgebiz-v36";
+const CACHE = "birgebiz-v37";
 const SHELL = ["/", "/manifest.webmanifest", "/static/icon.svg", "/static/icon-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -20,7 +20,7 @@ self.addEventListener("fetch", (e) => {
   // Network first: жаңы версия дароо келет, интернет жок болсо кэштен ачылат.
   const isPage = e.request.mode === "navigate" || url.pathname === "/";
   e.respondWith(
-    fetch(e.request, isPage ? { cache: "no-store" } : undefined)
+    fetch(e.request, { cache: isPage ? "no-store" : "no-cache" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
