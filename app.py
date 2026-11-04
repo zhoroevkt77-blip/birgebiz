@@ -603,3 +603,9 @@ async def sw():
 @app.get("/")
 async def index():
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/admin")
+async def admin_page():
+    """Модератор кирүүсү: өзүнчө дарек, жалпы колдонуучуларга баскыч көрүнбөйт."""
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache", "X-Robots-Tag": "noindex"})

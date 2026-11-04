@@ -865,7 +865,7 @@ function openMe(){
      +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
      +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
    +'<div class="note" id="meFree" hidden></div>'
-   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div><button class="wbk" data-admlogin style="font-size:14px;margin-bottom:8px">'+(S.admin?'🔓 Модератор режиминен чыгуу':'🔐 Модератор кирүүсү')+'</button>'
+   +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'+(S.admin?'<button class="wbk" data-admlogin style="font-size:14px;margin-bottom:8px">🔓 Модератор режиминен чыгуу</button>':'')
    +'</div>');
   let c=null;try{c=JSON.parse(localStorage.getItem("bb_contact")||"null")}catch(e){}
   if(c){api("/api/quote?"+new URLSearchParams(Object.assign({cat:"job",sub:""},c))).then(q=>{const el=$("meFree");if(!el)return;el.hidden=false;el.innerHTML=q.pay_enabled?(q.free_left>0?'🎁 Бекер жарыялар: <b>'+q.free_left+' / '+q.free_limit+'</b> калды':'Бекер '+q.free_limit+' жарыяңыз колдонулду. Жумуш издөө жана Кайрымдуулук дайыма бекер.'):'🎁 Азырынча бардык жарыялар бекер. Бекер лимит: <b>'+q.free_left+' / '+q.free_limit+'</b>'}).catch(()=>{})}
@@ -930,7 +930,13 @@ document.addEventListener("click",async e=>{
 async function load(){
   try{const j=await api("/api/ads");S.ads=(j.ads||[]).filter(a=>CAT[a.cat]);S.admin=!!j.admin;S.offline=false}
   catch(x){S.err=x&&x.message;S.offline=!S.ads.length;if(S.ads.length)$("status").textContent="Байланыш үзүлдү — маалымат эскирген болушу мүмкүн"}
-  S.ready=true;render();adminFeedback();
+  S.ready=true;render();adminFeedback();adminPage();
+}
+const IS_ADMIN_PAGE=/^\/admin\/?$/.test(location.pathname);
+let adminPaged=false;
+function adminPage(){
+  if(!IS_ADMIN_PAGE||adminPaged)return;adminPaged=true;
+  if(S.admin)openMe();else openAdminLogin();
 }
 load();
 loadFx();setInterval(loadFx,30*60000);
