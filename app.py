@@ -125,7 +125,7 @@ app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
 
 class AdIn(BaseModel):
     cat: str
-    sub: str = Field(min_length=1, max_length=80)
+    sub: str = Field(min_length=1, max_length=400)
     title: str = Field(min_length=5, max_length=80)
     text: str = Field(min_length=10, max_length=1500)
     price: int | None = Field(default=None, ge=0, le=100_000_000)
