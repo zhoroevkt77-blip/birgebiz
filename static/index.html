@@ -286,7 +286,7 @@ footer p{margin:0 0 8px;max-width:70ch}
 
 <footer class="wrap">
   <p><b>БИЗ БИРГЕБИЗ!</b> — мекендештер үчүн бекер жарыя тактасы. Жарыяларды колдонуучулар өздөрү берет, алардын тууралыгы үчүн жарыя ээси жооп берет.</p>
-  <p>Эрежелер: алдамчылык, мыйзамсыз кызмат, тил тийгизүү жана жалган документ сунуштаган жарыяларга тыюу салынат. Шектүү жарыяга «Шикаят» басыңыз — 3 шикаяттан кийин ал жашырылат.</p>
+  <p>Эрежелер: алдамчылык, мыйзамсыз кызмат, тил тийгизүү жана жалган документ сунуштаган жарыяларга тыюу салынат. Шектүү жарыяны көрсөңүз, «⚠️ Шектүү деп кабарлоо» баскычын басыңыз — 3 кабардан кийин ал жашырылат.</p>
   <p>Эч качан алдын ала толук акча которбоңуз жана паспортуңузду бөтөн адамга бербеңиз.</p>
 </footer>
 
@@ -468,7 +468,7 @@ function renderFeed(){
     $("feed").innerHTML='<div class="empty">'+msg+(!S.offline?'<br><button class="btn btn-red" data-act="post">+ Жарыя берүү</button>':'')+'</div>';
     return;
   }
-  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine||isFav(a.id))?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(a.status==="pending"?'<span class="tag">⏳ Төлөм текшерилүүдө</span>':'')+(a.status==="rejected"?'<span class="tag hid">Төлөм кабыл алынган жок</span>':'')+(isFav(a.id)?'<span class="tag grey">❤️</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
+  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine||isFav(a.id))?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(a.status==="pending"?'<span class="tag">⏳ Төлөм текшерилүүдө</span>':'')+(a.status==="rejected"?'<span class="tag hid">Төлөм кабыл алынган жок</span>':'')+(isFav(a.id)?'<span class="tag grey">❤️</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' кабар</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
 }
 function render(){renderCities();renderCats();renderFeed()}
 
@@ -495,7 +495,7 @@ function openDetail(key){
     +'<button class="favbtn" data-fav="'+esc(a.id)+'" aria-pressed="'+isFav(a.id)+'">'+(isFav(a.id)?"❤️ Тандалганда":"🤍 Тандалганга кошуу")+'</button>'
     +(canDel?'<button class="btn btn-ghost" data-del="'+esc(a.id)+'">'+(mine?"Жарыяны өчүрүү":"Модерация: өчүрүү")+'</button>':'')
     +(S.admin&&a.hidden?'<button class="btn btn-ghost" data-unhide="'+esc(a.id)+'">Кайра ачуу</button>':'')
-    +(!mine?'<button class="btn btn-ghost" data-report="'+esc(a.id)+'">Шикаят кылуу</button>':'')
+    +(!mine?'<button class="btn btn-ghost" data-report="'+esc(a.id)+'">⚠️ Шектүү деп кабарлоо</button>':'')
     +'</div>'
     +'</div>');
 }
@@ -636,7 +636,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.tab){goTab(t.dataset.tab);return}
   if(t.dataset.go){closeSheet();goTab(t.dataset.go);return}
   if(t.dataset.del){delAd(t.dataset.del);return}
-  if(t.dataset.report){const id=t.dataset.report;t.disabled=true;api("/api/ads/"+encodeURIComponent(id)+"/report",{method:"POST"}).then(()=>{t.textContent="Шикаят кабыл алынды";toast("Рахмат, модерация карап чыгат")},x=>{t.disabled=false;toast(x.message)});return}
+  if(t.dataset.report){const id=t.dataset.report;t.disabled=true;api("/api/ads/"+encodeURIComponent(id)+"/report",{method:"POST"}).then(()=>{t.textContent="Кабарыңыз кабыл алынды";toast("Рахмат, модерация карап чыгат")},x=>{t.disabled=false;toast(x.message)});return}
   if(t.dataset.unhide){api("/api/ads/"+encodeURIComponent(t.dataset.unhide)+"/unhide",{method:"POST"}).then(()=>{closeSheet();load();toast("Жарыя кайра ачылды")},x=>toast(x.message));return}
   if(t.dataset.act==="post"){openPost();return}
   if(t.dataset.copy){const el=$(t.dataset.copy);const txt=el.textContent;
@@ -769,8 +769,8 @@ function openHelp(){
   const q=[["Жарыяны кантип берем?","Ылдыйдагы кызыл «+» баскычын басыңыз, категорияны, шаарды жана байланышты жазыңыз. Жарыя ошол замат чыгат. Бекер."],
   ["Жарыямды кантип өчүрөм?","Кабинет → Менин жарыяларым. Жарыяны ачып, «Жарыяны өчүрүү» басыңыз. Жарыяны кайсы телефондон берсеңиз, ошол телефондон гана өчүрө аласыз."],
   ["Жарыя канча убакыт турат?","60 күн. Андан кийин тизмеден өзү чыгып кетет, керек болсо кайра бериңиз."],
-  ["Алдамчыдан кантип сак болом?","Алдын ала толук акча которбоңуз. Паспортуңузду бөтөн адамга бербеңиз. Патент, каттоо жана документтерди расмий жерден текшериңиз. Шектүү жарыяга «Шикаят кылуу» басыңыз."],
-  ["Шикаят кылсам эмне болот?","3 шикаят алган жарыя бардыгынан жашырылат, модератор карап чыгат."],
+  ["Алдамчыдан кантип сак болом?","Алдын ала толук акча которбоңуз. Паспортуңузду бөтөн адамга бербеңиз. Патент, каттоо жана документтерди расмий жерден текшериңиз. Шектүү жарыяга «⚠️ Шектүү деп кабарлоо» басыңыз."],
+  ["Шектүү жарыяны кабарласам эмне болот?","3 кабар алган жарыя бардыгынан жашырылат, модератор карап чыгат."],
   ["Сайтты телефонго колдонмо кылып орнотсо болобу?","Ооба. Браузердин ⋮ менюсунан «Башкы экранга кошуу» басыңыз."]];
   setTab("help");
   openSheet('<div class="shead"><h3>Жардам</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="faq">'+q.map(x=>'<details><summary>'+esc(x[0])+'</summary><p>'+esc(x[1])+'</p></details>').join("")+'</div>');

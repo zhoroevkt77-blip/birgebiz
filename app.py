@@ -33,7 +33,7 @@ SALT = os.environ.get("HASH_SALT", "birgebiz")
 PAY_INFO = os.environ.get("PAY_INFO", "").strip()
 STATIC = Path(__file__).parent / "static"
 
-REPORTS_TO_HIDE = 3        # ушунча шикаяттан кийин жарыя жашырылат
+REPORTS_TO_HIDE = 3        # ушунча «шектүү» кабардан кийин жарыя жашырылат
 MAX_ACTIVE_PER_OWNER = 30  # бир адамга активдүү жарыя
 MAX_POSTS_PER_IP_HOUR = 6  # бир IPден саатына
 AD_LIFETIME_DAYS = 60      # жарыя ушунча күндөн кийин тизмеден чыгат
