@@ -516,13 +516,13 @@ function openDetail(key){
     +'<dl class="kv"><dt>Шаар</dt><dd>'+esc(a.city)+'</dd>'+(a.area?'<dt>Район / метро</dt><dd>'+esc(a.area)+'</dd>':'')+(a.name?'<dt>Байланыш</dt><dd>'+esc(a.name)+'</dd>':'')+'</dl>'
     +(a.photos?'<div class="gal">'+Array.from({length:a.photos},(_,i)=>'<a href="/api/ads/'+encodeURIComponent(a.id)+'/photo/'+i+'" target="_blank" rel="noopener"><img src="/api/ads/'+encodeURIComponent(a.id)+'/photo/'+i+'" alt="Сүрөт '+(i+1)+'" loading="lazy"></a>').join('')+'</div>':'')+'<p>'+esc(a.text)+'</p>'
     +contacts.map((x,i)=>'<div class="contact"><span class="status" style="width:74px">'+x[0]+'</span><code id="cv'+i+'">'+esc(x[1])+'</code><button class="btn btn-ghost" data-copy="cv'+i+'">Көчүрүү</button></div>').join("")
-    +(WARN[a.cat]?'<div class="note warn">'+esc(WARN[a.cat])+'</div>':'')
     +'<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap" id="delzone">'
     +'<button class="favbtn" data-fav="'+esc(a.id)+'" aria-pressed="'+isFav(a.id)+'">'+(isFav(a.id)?"❤️ Тандалганда":"🤍 Тандалганга кошуу")+'</button>'
     +(canDel?'<button class="btn btn-ghost" data-del="'+esc(a.id)+'">'+(mine?"Жарыяны өчүрүү":"Модерация: өчүрүү")+'</button>':'')
     +(S.admin&&a.hidden?'<button class="btn btn-ghost" data-unhide="'+esc(a.id)+'">Кайра ачуу</button>':'')
     +(!mine?'<button class="btn btn-ghost" data-report="'+esc(a.id)+'">⚠️ Шектүү деп кабарлоо</button>':'')
     +'</div>'
+    +'<div class="note warn" style="margin-top:16px">'+(WARN[a.cat]?esc(WARN[a.cat])+'<br>':'')+'Эч качан алдын ала толук акча которбоңуз жана паспортуңузду бөтөн адамга бербеңиз.</div>'
     +'</div>');
 }
 
