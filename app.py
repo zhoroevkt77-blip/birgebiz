@@ -5,6 +5,7 @@ FastAPI + PostgreSQL. Аккаунт жок: ар бир браузер өзүн
 хэши гана сакталат). Админ ADMIN_TOKEN аркылуу баарын өчүрө алат.
 """
 import asyncio
+import base64
 import hashlib
 import re
 import time
@@ -22,9 +23,14 @@ from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel, Field, field_validator
 
+import pricing
+from pricing import FREE_LIMIT, contact_key, fee_for, parse_receipt
+
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 SALT = os.environ.get("HASH_SALT", "birgebiz")
+# Төлөм реквизиттери. Бош болсо — акы алуу өчүк (бардык жарыялар бекер, эсеп жүрө берет).
+PAY_INFO = os.environ.get("PAY_INFO", "").strip()
 STATIC = Path(__file__).parent / "static"
 
 REPORTS_TO_HIDE = 3        # ушунча шикаяттан кийин жарыя жашырылат
@@ -67,6 +73,17 @@ CREATE TABLE IF NOT EXISTS fx_daily (
     cur  TEXT NOT NULL,
     val  DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (day, cur)
+);
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS fee INT NOT NULL DEFAULT 0;
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS contact_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS receipt BYTEA;
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS receipt_type TEXT;
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS ads_status_idx ON ads (status);
+CREATE TABLE IF NOT EXISTS free_usage (
+    contact_key TEXT PRIMARY KEY,
+    used        INT NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS reports (
     ad_id    TEXT NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
@@ -138,6 +155,7 @@ class AdIn(BaseModel):
     wa: str = Field(default="", max_length=24)
     tg: str = Field(default="", max_length=40)
     forKg: bool = False
+    receipt: str | None = Field(default=None, max_length=1_700_000)
 
     @field_validator("cat")
     @classmethod
@@ -165,7 +183,10 @@ def to_json(row: dict, owner_hash: str | None, admin: bool) -> dict:
         "phone": row["phone"], "wa": row["wa"], "tg": row["tg"], "forKg": row["for_kg"],
         "created": int(row["created_at"].timestamp() * 1000),
         "mine": owner_hash is not None and row["owner_hash"] == owner_hash,
+        "status": row.get("status") or "active",
     }
+    if out["mine"] or admin:
+        out["fee"] = row.get("fee") or 0
     if admin:
         out["reports"] = row["reports"]
         out["hidden"] = row["hidden"]
@@ -231,6 +252,27 @@ async def healthz():
     return {"ok": True, "db": pool is not None}
 
 
+async def free_used(conn, key: str) -> int:
+    if not key:
+        return 0
+    cur = await conn.execute("SELECT used FROM free_usage WHERE contact_key=%s", (key,))
+    row = await cur.fetchone()
+    return row["used"] if row else 0
+
+
+@app.get("/api/quote")
+async def quote(cat: str, sub: str = "", phone: str = "", wa: str = "", tg: str = ""):
+    """Жарыя берүүнүн акыркы кадамында: бекерби, канча калды, төлөм керекпи."""
+    fee = fee_for(cat, sub)
+    key = contact_key(phone, wa, tg)
+    async with db().connection() as conn:
+        used = await free_used(conn, key)
+    left = max(0, FREE_LIMIT - used)
+    needs = fee > 0 and left == 0 and bool(PAY_INFO)
+    return {"fee": fee, "free_left": left, "free_limit": FREE_LIMIT, "pay_enabled": bool(PAY_INFO),
+            "needs_payment": needs, "pay_info": PAY_INFO if needs else ""}
+
+
 @app.get("/api/ads")
 async def list_ads(x_owner_token: str | None = Header(default=None),
                    x_admin_token: str | None = Header(default=None)):
@@ -240,9 +282,10 @@ async def list_ads(x_owner_token: str | None = Header(default=None),
         cur = await conn.execute(
             f"""SELECT * FROM ads
                 WHERE created_at > now() - interval '{AD_LIFETIME_DAYS} days'
-                  AND (NOT hidden OR %s OR owner_hash = %s)
+                  AND ((status = 'active' AND NOT hidden) OR owner_hash = %s
+                       OR (%s AND status = 'active'))
                 ORDER BY created_at DESC LIMIT 2000""",
-            (admin, owner_hash or ""),
+            (owner_hash or "", admin),
         )
         rows = await cur.fetchall()
     return {"ads": [to_json(r, owner_hash, admin) for r in rows], "admin": admin}
@@ -268,15 +311,38 @@ async def create_ad(ad: AdIn, request: Request,
             (owner_hash,))
         if (await cur.fetchone())["n"] >= MAX_ACTIVE_PER_OWNER:
             raise HTTPException(429, f"Бир адамга {MAX_ACTIVE_PER_OWNER} жарыяга чейин. Эскилерин өчүрүңүз.")
-        ad_id = "a" + secrets.token_hex(6)
-        cur = await conn.execute(
-            """INSERT INTO ads (id, owner_hash, ip_hash, cat, sub, title, body, price, cur, per,
-                                city, area, name, phone, wa, tg, for_kg)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
-            (ad_id, owner_hash, ip_hash, ad.cat, ad.sub, ad.title, ad.text, ad.price, ad.cur,
-             ad.per, ad.city, ad.area, ad.name, ad.phone, ad.wa, ad.tg, ad.forKg))
-        row = await cur.fetchone()
-    return to_json(row, owner_hash, False)
+        fee = fee_for(ad.cat, ad.sub)
+        key = contact_key(ad.phone, ad.wa, ad.tg)
+        status, charged, receipt, rtype = "active", 0, None, None
+        async with conn.transaction():
+            if fee > 0 and key:
+                await conn.execute("INSERT INTO free_usage (contact_key, used) VALUES (%s, 0) ON CONFLICT DO NOTHING", (key,))
+                cur = await conn.execute("SELECT used FROM free_usage WHERE contact_key=%s FOR UPDATE", (key,))
+                used = (await cur.fetchone())["used"]
+                if used >= FREE_LIMIT and PAY_INFO:
+                    if not ad.receipt:
+                        raise HTTPException(402, f"Бекер {FREE_LIMIT} жарыяңыз бүттү. Бул жарыянын баасы {fee} ₽ — төлөп, чекти жүктөңүз.")
+                    try:
+                        receipt, rtype = parse_receipt(ad.receipt)
+                    except ValueError as e:
+                        raise HTTPException(422, str(e))
+                    status, charged = "pending", fee
+                else:
+                    await conn.execute("UPDATE free_usage SET used = used + 1 WHERE contact_key=%s", (key,))
+            ad_id = "a" + secrets.token_hex(6)
+            cur = await conn.execute(
+                """INSERT INTO ads (id, owner_hash, ip_hash, cat, sub, title, body, price, cur, per,
+                                    city, area, name, phone, wa, tg, for_kg, status, fee, contact_key,
+                                    receipt, receipt_type)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
+                (ad_id, owner_hash, ip_hash, ad.cat, ad.sub, ad.title, ad.text, ad.price, ad.cur,
+                 ad.per, ad.city, ad.area, ad.name, ad.phone, ad.wa, ad.tg, ad.forKg, status, charged, key,
+                 receipt, rtype))
+            row = await cur.fetchone()
+        left = max(0, FREE_LIMIT - await free_used(conn, key)) if key else FREE_LIMIT
+    out = to_json(row, owner_hash, False)
+    out["free_left"] = left
+    return out
 
 
 @app.delete("/api/ads/{ad_id}")
@@ -318,6 +384,69 @@ async def unhide_ad(ad_id: str, x_admin_token: str | None = Header(default=None)
         await conn.execute("UPDATE ads SET hidden=false, reports=0 WHERE id=%s", (ad_id,))
         await conn.execute("DELETE FROM reports WHERE ad_id=%s", (ad_id,))
     return {"ok": True}
+
+
+# ── Админ: төлөмдөрдү текшерүү жана статистика ──
+def need_admin(tok):
+    if not is_admin(tok):
+        raise HTTPException(403, "Админ гана.")
+
+
+@app.get("/api/admin/pending")
+async def admin_pending(x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        cur = await conn.execute("SELECT * FROM ads WHERE status='pending' ORDER BY created_at ASC LIMIT 100")
+        rows = await cur.fetchall()
+    out = []
+    for r in rows:
+        j = to_json(r, None, True)
+        if r.get("receipt"):
+            j["receipt"] = "data:%s;base64,%s" % (r["receipt_type"] or "image/jpeg",
+                                                 base64.b64encode(bytes(r["receipt"])).decode())
+        out.append(j)
+    return {"items": out}
+
+
+@app.post("/api/ads/{ad_id}/approve")
+async def admin_approve(ad_id: str, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        # жарыянын 60 күнү тастыкталган күндөн башталат
+        cur = await conn.execute("UPDATE ads SET status='active', reviewed_at=now(), created_at=now() "
+                                 "WHERE id=%s AND status='pending'", (ad_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Жарыя табылган жок же мурда эле каралган.")
+    return {"ok": True}
+
+
+@app.post("/api/ads/{ad_id}/reject")
+async def admin_reject(ad_id: str, x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        cur = await conn.execute("UPDATE ads SET status='rejected', reviewed_at=now() "
+                                 "WHERE id=%s AND status='pending'", (ad_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Жарыя табылган жок же мурда эле каралган.")
+    return {"ok": True}
+
+
+@app.get("/api/admin/stats")
+async def admin_stats(x_admin_token: str | None = Header(default=None)):
+    need_admin(x_admin_token)
+    async with db().connection() as conn:
+        cur = await conn.execute(f"""SELECT
+            count(*) FILTER (WHERE status='active' AND created_at > now() - interval '{AD_LIFETIME_DAYS} days') AS active,
+            count(*) FILTER (WHERE created_at > now() - interval '1 day') AS today,
+            count(*) FILTER (WHERE status='pending') AS pending,
+            count(*) FILTER (WHERE hidden) AS hidden,
+            coalesce(sum(fee) FILTER (WHERE status='active' AND fee > 0), 0) AS earned
+            FROM ads""")
+        st = await cur.fetchone()
+        cur = await conn.execute(f"""SELECT cat, count(*) AS n FROM ads WHERE status='active'
+            AND created_at > now() - interval '{AD_LIFETIME_DAYS} days' GROUP BY cat ORDER BY n DESC""")
+        by = await cur.fetchall()
+    return {**st, "by_cat": by, "pay_enabled": bool(PAY_INFO), "free_limit": FREE_LIMIT}
 
 
 @app.exception_handler(HTTPException)

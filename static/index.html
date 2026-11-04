@@ -172,6 +172,12 @@ label.f span.req{color:var(--danger)}
 .status{font-size:13px;color:var(--muted)}
 .tunduk{opacity:.95}
 .areaf{max-width:320px;margin-bottom:4px}
+.fee{margin-top:12px;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.4}
+.fee.ok{background:color-mix(in srgb,var(--good) 12%,var(--surface));border:2px solid color-mix(in srgb,var(--good) 45%,transparent)}
+.fee.pay{background:var(--surface);border:2px solid var(--fg)}
+.fee.pay p{margin:6px 0 8px}
+.payinfo{white-space:pre-wrap;font:inherit;font-weight:800;background:var(--sunk);border-radius:10px;padding:10px 12px;margin:0;user-select:all;overflow-wrap:anywhere}
+.rcpt img,.rimg{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--line);margin-top:8px}
 .wpb{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;margin:-4px 0 12px}
 .wpb span{display:block;height:100%;background:var(--red);border-radius:3px;transition:width .2s}
 .wchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
@@ -428,7 +434,8 @@ function renderCities(){
   $("areaWrap").hidden=!ar;
   if(ar)$("areaSel").innerHTML='<option value="">Бардык райондор</option>'+ar.map(x=>'<option'+(x===S.area?' selected':'')+'>'+esc(x)+'</option>').join("");
 }
-const subsOf=a=>String(a.sub||"").split(", ").filter(Boolean);
+const SUBSEP=" · ";
+const subsOf=a=>{const x=String(a.sub||"");if(x.includes(SUBSEP))return x.split(SUBSEP);const c=CAT[a.cat];return c&&c.subs.includes(x)?[x]:x.split(", ").filter(Boolean)};
 const SINGLE=new Set(["carsale","ride"]); // бул категорияларда бир гана түр тандалат
 function filtered(){
   const q=S.q.trim().toLowerCase().replace(/ё/g,"е");
@@ -461,7 +468,7 @@ function renderFeed(){
     $("feed").innerHTML='<div class="empty">'+msg+(!S.offline?'<br><button class="btn btn-red" data-act="post">+ Жарыя берүү</button>':'')+'</div>';
     return;
   }
-  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine||isFav(a.id))?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(isFav(a.id)?'<span class="tag grey">❤️</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
+  $("feed").innerHTML=list.map(a=>'<button class="ad" data-ad="'+esc(a.id)+'"><span class="top"><span>'+esc(CAT[a.cat]?.nm||"")+" · "+esc(a.sub)+'</span><span>'+ago(a.created)+'</span></span><span class="ttl">'+esc(a.title)+'</span>'+((a.forKg||a.hidden||a.mine||isFav(a.id))?'<span style="display:flex;gap:6px;flex-wrap:wrap">'+(a.forKg?'<span class="tag">Мекендештерге</span>':'')+(a.mine?'<span class="tag grey">Меники</span>':'')+(a.status==="pending"?'<span class="tag">⏳ Төлөм текшерилүүдө</span>':'')+(a.status==="rejected"?'<span class="tag hid">Төлөм кабыл алынган жок</span>':'')+(isFav(a.id)?'<span class="tag grey">❤️</span>':'')+(a.hidden?'<span class="tag hid">Жашырылган · '+(a.reports||0)+' шикаят</span>':'')+'</span>':'')+'<span class="txt">'+esc(a.text)+'</span><span class="bot">'+priceHtml(a)+'<span class="loc">'+esc(a.city)+(a.area?", "+esc(a.area):"")+'</span></span></button>').join("");
 }
 function render(){renderCities();renderCats();renderFeed()}
 
@@ -532,7 +539,7 @@ const WSTEPS=[
  ()=>'<h4 class="wq">'+esc(QX[W.d.cat][0])+'</h4><textarea class="win" id="wf" rows="4" maxlength="1500" placeholder="'+esc("Мис: "+txFor(1))+'">'+esc(W.d.text||"")+'</textarea><div class="err" id="we"></div><button class="wgo" data-wnext="text" data-min="10">Улантуу</button>',
  ()=>{const c=CAT[W.d.cat];return '<h4 class="wq">Баасы канча?</h4><input class="win" id="wf" inputmode="numeric" value="'+(W.d.price??"")+'" placeholder="Мис: 3500"><div class="wseg"><button class="wop'+(W.d.cur!=="KGS"?" on":"")+'" data-wcur="RUB">₽ рубль</button><button class="wop'+(W.d.cur==="KGS"?" on":"")+'" data-wcur="KGS">сом</button></div>'+(c.unit&&c.unit.length?'<p class="whint">Ченеми:</p>'+wops(c.unit,"per",W.d.per):'')+'<div class="err" id="we"></div><button class="wgo" data-wnext="price" data-min="0">Улантуу</button><button class="wsk" data-wskipprice>Келишим боюнча</button>'},
  ()=>'<h4 class="wq">Сиз менен кантип байланышат?</h4><p class="whint">Жок дегенде бирөөнү жазыңыз.</p><label class="f">Телефон<input class="win" id="wph" inputmode="tel" maxlength="24" value="'+esc(W.d.phone||"")+'" placeholder="+7 900 000-00-00"></label><label class="f">WhatsApp<input class="win" id="wwa" inputmode="tel" maxlength="24" value="'+esc(W.d.wa||"")+'" placeholder="+996 700 00 00 00"></label><label class="f">Telegram<input class="win" id="wtg" maxlength="40" value="'+esc(W.d.tg||"")+'" placeholder="@username"></label><label class="f">Атыңыз<input class="win" id="wnm" maxlength="40" value="'+esc(W.d.name||"")+'" placeholder="Мис: Азамат"></label><div class="err" id="we"></div><button class="wgo" data-wcontact>Улантуу</button>',
- ()=>{const d=W.d;return '<h4 class="wq">Текшериңиз</h4><div class="wprev"><div class="status">'+esc(CAT[d.cat].nm)+' · '+esc((d.subs||[]).join(", "))+'</div><b>'+esc(d.title)+'</b>'+priceHtml(d)+'<div class="status">'+esc(d.city)+(d.area?', '+esc(d.area):'')+'</div><p>'+esc(d.text)+'</p><div class="status">'+[d.phone&&("📞 "+d.phone),d.wa&&("WhatsApp "+d.wa),d.tg&&("Telegram "+d.tg)].filter(Boolean).map(esc).join(" · ")+'</div></div><label class="check"><input type="checkbox" id="wkg"'+(d.forKg?" checked":"")+'> «Мекендештерге» белгисин кошуу</label><div class="err" id="we"></div><button class="wgo" id="wpub">Жарыяны жайгаштыруу</button><p class="whint">Жарыяңызды каалаган убакта Кабинеттен өчүрө аласыз.</p>'}
+ ()=>{const d=W.d;return '<h4 class="wq">Текшериңиз</h4><div class="wprev"><div class="status">'+esc(CAT[d.cat].nm)+' · '+esc((d.subs||[]).join(", "))+'</div><b>'+esc(d.title)+'</b>'+priceHtml(d)+'<div class="status">'+esc(d.city)+(d.area?', '+esc(d.area):'')+'</div><p>'+esc(d.text)+'</p><div class="status">'+[d.phone&&("📞 "+d.phone),d.wa&&("WhatsApp "+d.wa),d.tg&&("Telegram "+d.tg)].filter(Boolean).map(esc).join(" · ")+'</div></div><label class="check"><input type="checkbox" id="wkg"'+(d.forKg?" checked":"")+'> «Мекендештерге» белгисин кошуу</label>'+feeBox()+'<div class="err" id="we"></div><button class="wgo" id="wpub">'+(W.q&&W.q.needs_payment?'Чекти жөнөтүү':'Жарыяны жайгаштыруу')+'</button><p class="whint">Жарыяңызды каалаган убакта Кабинеттен өчүрө аласыз.</p>'}
 ];
 function wzDraw(){
   const box=$("wz");if(!box)return;
@@ -548,14 +555,32 @@ function openPost(){
   openSheet('<div class="shead"><h3>Жарыя берүү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="wz"></div>');
   setTab("post");wzDraw();
 }
+function feeBox(){
+  const q=W.q;if(!q)return "";
+  if(q.fee===0)return '<div class="fee ok">✅ Бул жарыя дайыма бекер.</div>';
+  if(!q.needs_payment){
+    const left=q.free_left;
+    if(left>0)return '<div class="fee ok">🎁 Бекер. Сизде '+q.free_limit+' бекер жарыядан <b>'+left+'</b> калды'+(left===1?' — бул акыркысы':'')+'.<br><small>Андан кийин бул категориядагы жарыянын баасы '+q.fee+' ₽.</small></div>';
+    return '<div class="fee ok">🎁 Азырынча бардык жарыялар бекер.</div>';
+  }
+  const d=W.d;
+  return '<div class="fee pay"><b>Бул жарыянын баасы: '+q.fee+' ₽</b><p>Бекер '+q.free_limit+' жарыяңыз бүттү. Төмөнкү реквизиттерге которуп, чектин скриншотун жүктөңүз:</p><pre class="payinfo">'+esc(q.pay_info)+'</pre>'
+   +(d.receipt?'<div class="rcpt"><img src="'+d.receipt+'" alt="Чектин сүрөтү"><button class="wsk" data-wrcptx>Башка сүрөт тандоо</button></div>':'<button class="wbk" data-wrcpt>📎 Чектин сүрөтүн жүктөө</button>')
+   +'<input type="file" id="wrf" accept="image/*" hidden><p class="whint" style="margin:8px 0 0">Төлөм текшерилгенден кийин жарыя чыгат (адатта бир нече саатта).</p></div>';
+}
+function shrinkImage(file){return new Promise((ok,no)=>{const fr=new FileReader();fr.onerror=()=>no();fr.onload=()=>{const im=new Image();im.onerror=()=>no();im.onload=()=>{const m=1400,k=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.78))};im.src=fr.result};fr.readAsDataURL(file)})}
+document.addEventListener("change",e=>{if(e.target.id!=="wrf"||!e.target.files[0])return;shrinkImage(e.target.files[0]).then(u=>{W.d.receipt=u;W.d.forKg=$("wkg")?$("wkg").checked:W.d.forKg;wzDraw()},()=>{const er=$("we");if(er)er.textContent="Сүрөттү ачуу мүмкүн болгон жок. Башка сүрөт тандаңыз."})});
 async function wzPublish(btn){
   const d=W.d,er=$("we");d.forKg=$("wkg").checked;
-  const ad={cat:d.cat,sub:(d.subs||[]).join(", "),title:d.title,text:d.text,price:d.price?Number(d.price):null,cur:d.cur||"RUB",per:d.per||"",city:d.city,area:d.area||"",name:d.name||"",phone:d.phone||"",wa:d.wa||"",tg:d.tg||"",forKg:!!d.forKg};
+  if(W.q&&W.q.needs_payment&&!d.receipt){er.textContent="Адегенде чектин сүрөтүн жүктөңүз.";return}
+  const ad={cat:d.cat,sub:(d.subs||[]).join(SUBSEP),receipt:d.receipt||null,title:d.title,text:d.text,price:d.price?Number(d.price):null,cur:d.cur||"RUB",per:d.per||"",city:d.city,area:d.area||"",name:d.name||"",phone:d.phone||"",wa:d.wa||"",tg:d.tg||"",forKg:!!d.forKg};
   btn.disabled=true;btn.textContent="Жайгаштырылууда…";
   try{
     const saved=await api("/api/ads",{method:"POST",body:JSON.stringify(ad)});
-    S.ads.unshift(saved);W.step=0;W.d={};W.allCities=false;
-    closeSheet();toast("Жарыя жайгаштырылды 🎉");S.cat=ad.cat;S.sub=null;S.mine=false;S.fav=false;render();toFeed();
+    S.ads.unshift(saved);
+    try{localStorage.setItem("bb_contact",JSON.stringify({phone:d.phone||"",wa:d.wa||"",tg:d.tg||""}))}catch(e){}
+    W.step=0;W.d={};W.allCities=false;W.q=null;
+    closeSheet();toast(saved.status==="pending"?"Чек жөнөтүлдү. Төлөм текшерилгенден кийин жарыя чыгат":"Жарыя жайгаштырылды 🎉");S.cat=ad.cat;S.sub=null;S.mine=false;S.fav=false;render();toFeed();
   }catch(x){btn.disabled=false;btn.textContent="Жарыяны жайгаштыруу";er.textContent=(x&&x.message)||"Сакталган жок. Интернетти текшерип, кайра басыңыз."}
 }
 document.addEventListener("click",e=>{
@@ -578,7 +603,11 @@ document.addEventListener("click",e=>{
   if(ds.wcontact!==undefined){d.phone=$("wph").value.trim();d.wa=$("wwa").value.trim();d.tg=$("wtg").value.trim();d.name=$("wnm").value.trim();
     if(!d.phone&&!d.wa&&!d.tg){$("we").textContent="Жок дегенде бир байланыш жазыңыз: телефон, WhatsApp же Telegram.";return}
     const ph=d.phone||d.wa;if(ph&&ph.replace(/\D/g,"").length<9){$("we").textContent="Номерди толук жазыңыз, мис: +7 900 000-00-00";return}
-    wzNext();return}
+    b.disabled=true;b.textContent="Текшерилүүдө…";
+    const qs=new URLSearchParams({cat:d.cat,sub:(d.subs||[]).join(SUBSEP),phone:d.phone||"",wa:d.wa||"",tg:d.tg||""});
+    api("/api/quote?"+qs).then(q=>{W.q=q}).catch(()=>{W.q=null}).finally(()=>{wzNext()});return}
+  if(ds.wrcpt!==undefined){$("wrf").click();return}
+  if(ds.wrcptx!==undefined){d.receipt=null;wzDraw();return}
   if(b.id==="wpub"){wzPublish(b);return}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="wf"&&e.target.tagName==="INPUT"){e.preventDefault();const g=document.querySelector("#wz .wgo");if(g)g.click()}});
@@ -705,6 +734,8 @@ function goTab(name){
   if(name==="fav"){closeSheet();S.fav=true;S.mine=false;S.cat=S.sub=null;setTab("fav");render();toFeed();return}
   if(name==="mine"){S.mine=true;S.fav=false;S.cat=S.sub=null;setTab("me");render();toFeed();return}
   if(name==="help"){openHelp();return}
+  if(name==="pending"){openPending();return}
+  if(name==="stats"){openStats();return}
   if(name==="me"){openMe();return}
 }
 const FXN={USD:["$","АКШ доллары"],EUR:["€","Евро"],RUB:["₽","Орус рубли"],KZT:["₸","Казак теңгеси"],CNY:["¥","Кытай юаны"]};
@@ -750,13 +781,39 @@ function openMe(){
   setTab("me");
   openSheet('<div class="shead"><h3>Кабинет</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div class="mlist">'
    +'<button class="mrow" data-go="mine"><span class="mi">'+MI.list+'</span><span>Менин жарыяларым<small>'+mine+' жарыя</small></span><span class="chev">›</span></button>'
-   +'<button class="mrow" data-go="post"><span class="mi">'+MI.mega+'</span><span>Жарыя берүү<small>Бекер, аккаунтсуз</small></span><span class="chev">›</span></button>'
+   +'<button class="mrow" data-go="post"><span class="mi">'+MI.mega+'</span><span>Жарыя берүү<small>Алгачкы 10 жарыя бекер</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="fav"><span class="mi">'+MI.heart+'</span><span>Тандалгандар<small>'+fav+' жарыя</small></span><span class="chev">›</span></button>'
    +'<button class="mrow" data-go="help"><span class="mi">'+MI.help+'</span><span>Жардам жана коопсуздук</span><span class="chev">›</span></button>'
-   +(S.admin?'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
+   +(S.admin?'<button class="mrow" data-go="pending"><span class="mi">'+MI.list+'</span><span>Төлөмдөрдү текшерүү<small id="mePend">…</small></span><span class="chev">›</span></button>'
+     +'<button class="mrow" data-go="stats"><span class="mi">'+MI.mega+'</span><span>Статистика</span><span class="chev">›</span></button>'
+     +'<div class="note">Сиз модератор режиминдесиз. Жашырылган жарыялар «Жашырылган» белгиси менен көрүнөт.</div>':'')
+   +'<div class="note" id="meFree" hidden></div>'
    +'<div class="status">Жарыяларыңыз ушул телефонго байланган. Браузердин маалыматын тазаласаңыз, аларды өчүрө албай каласыз.</div>'
    +'</div>');
+  let c=null;try{c=JSON.parse(localStorage.getItem("bb_contact")||"null")}catch(e){}
+  if(c){api("/api/quote?"+new URLSearchParams(Object.assign({cat:"job",sub:""},c))).then(q=>{const el=$("meFree");if(!el)return;el.hidden=false;el.innerHTML=q.pay_enabled?(q.free_left>0?'🎁 Бекер жарыялар: <b>'+q.free_left+' / '+q.free_limit+'</b> калды':'Бекер '+q.free_limit+' жарыяңыз колдонулду. Жумуш издөө жана Кайрымдуулук дайыма бекер.'):'🎁 Азырынча бардык жарыялар бекер. Бекер лимит: <b>'+q.free_left+' / '+q.free_limit+'</b>'}).catch(()=>{})}
+  if(S.admin)api("/api/admin/stats").then(st=>{const el=$("mePend");if(el)el.textContent=st.pending+" чек күтүүдө"}).catch(()=>{});
 }
+async function openPending(){
+  setTab("me");openSheet('<div class="shead"><h3>Төлөмдөрдү текшерүү</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="pendList" class="mlist"><div class="status">Жүктөлүүдө…</div></div>');
+  try{const j=await api("/api/admin/pending");const el=$("pendList");if(!el)return;
+    if(!j.items.length){el.innerHTML='<div class="empty"><b>Текшере турган чек жок</b>Жаңы төлөм келгенде ушул жерде көрүнөт.</div>';return}
+    el.innerHTML=j.items.map(a=>'<div class="wprev" id="pd-'+esc(a.id)+'"><div class="status">'+esc(CAT[a.cat]?.nm||a.cat)+' · '+esc(a.sub)+' · '+ago(a.created)+'</div><b>'+esc(a.title)+'</b><div class="pr">Төлөнүшү керек: <b>'+(a.fee||0)+' ₽</b></div><div class="status">'+esc(a.city)+' · '+esc(a.phone||a.wa||a.tg)+'</div>'
+      +(a.receipt?'<a href="'+a.receipt+'" target="_blank" rel="noopener"><img class="rimg" src="'+a.receipt+'" alt="Чек"></a>':'<div class="status">Чек жок</div>')
+      +'<div class="row2"><button class="wgo" data-appr="'+esc(a.id)+'">✓ Тастыктоо</button><button class="wbk" data-rej="'+esc(a.id)+'">✕ Четке кагуу</button></div></div>').join("");
+  }catch(x){const el=$("pendList");if(el)el.innerHTML='<div class="err">'+esc(x.message)+'</div>'}
+}
+async function openStats(){
+  setTab("me");openSheet('<div class="shead"><h3>Статистика</h3><button class="x" data-close aria-label="Жабуу">✕</button></div><div id="statBox" class="mlist"><div class="status">Жүктөлүүдө…</div></div>');
+  try{const st=await api("/api/admin/stats");const el=$("statBox");if(!el)return;
+    const tile=(n,l)=>'<div class="fxrow"><span class="sym">'+n+'</span><span><b>'+l+'</b></span><span></span></div>';
+    el.innerHTML=tile(st.active,"Активдүү жарыя")+tile(st.today,"Акыркы 24 саатта")+tile(st.pending,"Төлөм күтүүдө")+tile(st.hidden,"Шикаят менен жашырылган")+tile(fmt(st.earned)+"₽","Тастыкталган төлөмдөр")
+      +'<h4 class="wq">Категориялар боюнча</h4>'+(st.by_cat.length?st.by_cat.map(x=>'<div class="fxrow"><span class="sym">'+x.n+'</span><span><b>'+esc(CAT[x.cat]?.nm||x.cat)+'</b></span><span></span></div>').join(""):'<div class="status">Азырынча жарыя жок</div>')
+      +'<div class="note">Төлөм: '+(st.pay_enabled?'<b>күйгүзүлгөн</b>':'<b>өчүк</b> — Railway\'де PAY_INFO өзгөрмөсүнө реквизиттерди жазсаңыз күйөт')+'. Бекер лимит: '+st.free_limit+' жарыя.</div>';
+  }catch(x){const el=$("statBox");if(el)el.innerHTML='<div class="err">'+esc(x.message)+'</div>'}
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-appr],[data-rej]");if(!b)return;const id=b.dataset.appr||b.dataset.rej,ok=!!b.dataset.appr;b.disabled=true;
+  api("/api/ads/"+encodeURIComponent(id)+(ok?"/approve":"/reject"),{method:"POST"}).then(()=>{const c=$("pd-"+id);if(c)c.outerHTML='<div class="note">'+(ok?"✓ Тастыкталды, жарыя чыкты":"✕ Четке кагылды")+'</div>';toast(ok?"Тастыкталды":"Четке кагылды");load()},x=>{b.disabled=false;toast(x.message)})});
 $("home").onclick=()=>goTab("home");
 $("fxBar").onclick=openFx;
 {const hd=document.querySelector("header");let cmp=false;const onS=()=>{const c=scrollY>120;if(c!==cmp){cmp=c;hd.classList.toggle("compact",c)}};addEventListener("scroll",onS,{passive:true});onS()}
